@@ -4,13 +4,13 @@ import compression from 'compression';
 import helmet from 'helmet';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const isProduction = process.env.NODE_ENV === 'production';
 
 // Middleware
 app.use(helmet({
@@ -19,7 +19,7 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
             fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'"]
         }
@@ -32,17 +32,34 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from dist directory
-app.use(express.static(path.join(__dirname, 'dist'), {
-    maxAge: isProduction ? '1y' : '0',
+// Serve static files from root directory
+app.use(express.static(__dirname, {
+    maxAge: '0',
     etag: true,
     lastModified: true,
-    setHeaders: (res, path) => {
-        if (path.endsWith('.html')) {
+    setHeaders: (res, filePath) => {
+        // Устанавливаем правильные MIME types
+        if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html; charset=UTF-8');
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         }
     }
 }));
+
+// Serve specific files with proper content type
+app.get('/src/styles/main.css', (req, res) => {
+    res.setHeader('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, 'src', 'styles', 'main.css'));
+});
+
+app.get('/src/scripts/main.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, 'src', 'scripts', 'main.js'));
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -56,7 +73,8 @@ app.get('/api/health', (req, res) => {
 
 // Serve index.html for all routes (SPA support)
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Error handling middleware
@@ -64,25 +82,21 @@ app.use((err, req, res, next) => {
     console.error('Server error:', err);
     res.status(500).json({ 
         error: 'Internal server error',
-        message: isProduction ? 'Something went wrong' : err.message
+        message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
     });
-});
-
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-    res.status(404).json({ error: 'API endpoint not found' });
 });
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Access: http://localhost:${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`📁 Serving files directly from source`);
+    console.log(`🌐 Access: http://localhost:${PORT}`);
+    console.log(`🌐 External: http://185.225.34.56:${PORT}`);
 });
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-    console.log('Received SIGINT. Shutting down gracefully...');
+    console.log('🛑 Received SIGINT. Shutting down gracefully...');
     server.close(() => {
         console.log('Server closed');
         process.exit(0);

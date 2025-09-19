@@ -1,22 +1,24 @@
-module.exports = {
-  apps: [{
-    name: 'tender-hack',
-    script: './server.js',
-    instances: 1,
-    exec_mode: 'fork',
-    env: {
-      NODE_ENV: 'development',
-      PORT: 3001
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+    root: '.',
+    publicDir: 'public',
+    appType: 'spa',
+    server: {
+        port: 3001,
+        host: true,
+        open: true,
+        cors: true,
+        middlewareMode: false
     },
-    env_production: {
-      NODE_ENV: 'production',
-      PORT: 3001
+    preview: {
+        port: 3001,
+        host: true
     },
-    watch: false,
-    max_memory_restart: '500M',
-    error_file: './logs/err.log',
-    out_file: './logs/out.log',
-    log_file: './logs/combined.log',
-    time: true
-  }]
-};
+    css: {
+        devSourcemap: true
+    },
+    // Отключаем сборку для production, так как будем использовать Express
+    build: false
+});

@@ -1,38 +1,27 @@
 {
   "name": "tender-hack",
   "version": "1.0.0",
-  "description": "Поисковая система по базе знаний с авторизацией",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
     "start": "node server.js",
+    "start:dev": "NODE_ENV=development node server.js",
     "start:prod": "NODE_ENV=production node server.js",
-    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:start": "pm2 start server.js --name tender-hack",
+    "pm2:start:prod": "NODE_ENV=production pm2 start server.js --name tender-hack",
     "pm2:stop": "pm2 stop tender-hack",
     "pm2:restart": "pm2 restart tender-hack",
-    "pm2:delete": "pm2 delete tender-hack",
     "pm2:logs": "pm2 logs tender-hack",
-    "pm2:status": "pm2 status",
-    "pm2:monit": "pm2 monit",
-    "setup:prod": "npm install && npm run build"
+    "pm2:status": "pm2 status"
   },
   "dependencies": {
-    "compression": "^1.8.1",
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "helmet": "^7.2.0"
+    "express": "^4.18.2",
+    "compression": "^1.7.4",
+    "helmet": "^7.0.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
-    "pm2": "^5.3.0",
-    "vite": "^4.4.0"
-  },
-  "keywords": [
-    "search",
-    "knowledge-base",
-    "authentication"
-  ],
-  "author": "Faso312",
-  "license": "MIT"
+    "vite": "^4.4.0",
+    "pm2": "^5.3.0"
+  }
 }
