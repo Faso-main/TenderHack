@@ -32,6 +32,17 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from dist directory
+app.use(express.static(path.join(__dirname, 'dist'), {
+    maxAge: isProduction ? '1y' : '0',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+    }
+}));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
