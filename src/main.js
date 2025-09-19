@@ -45,66 +45,74 @@ class KnowledgeBaseApp {
   renderApp() {
     const app = document.querySelector('#app');
     app.innerHTML = `
-      <div class="container">
-        <div class="user-icon" id="userIcon">
-          <i class="fas fa-user"></i>
-        </div>
-
-        <div class="search-container">
-          <h1>База знаний</h1>
-          <p class="subtitle">Найдите ответы на ваши вопросы</p>
-          
-          <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Введите ваш вопрос...">
-            <button id="searchButton">
-              <i class="fas fa-search"></i>
-              Поиск
-            </button>
+      <div class="app-container">
+        <header class="header">
+          <div class="user-icon" id="userIcon">
+            <i class="fas fa-user"></i>
           </div>
-          
-          <div id="searchResults" class="search-results"></div>
-        </div>
+        </header>
+
+        <main class="main-content">
+          <div class="search-container">
+            <div class="search-header">
+              <h1>Smart - строка</h1>
+            </div>
+            
+            <div class="search-box">
+              <input type="text" id="searchInput" placeholder="Введите ваш вопрос...">
+              <button id="searchButton">
+                <i class="fas fa-search"></i>
+                <span>Поиск</span>
+              </button>
+            </div>
+            
+            <div id="searchResults" class="search-results"></div>
+          </div>
+        </main>
 
         <div id="authModal" class="modal">
-          <div class="modal-content">
-            <span class="close">&times;</span>
-            
-            <div class="auth-forms">
-              <form id="loginForm" class="auth-form active">
-                <h2>Вход в систему</h2>
-                <div class="input-group">
-                  <i class="fas fa-envelope"></i>
-                  <input type="email" id="loginEmail" placeholder="Email" required>
-                </div>
-                <div class="input-group">
-                  <i class="fas fa-lock"></i>
-                  <input type="password" id="loginPassword" placeholder="Пароль" required>
-                </div>
-                <button type="submit" class="btn-primary">Войти</button>
-                <p class="auth-switch">
-                  Нет аккаунта? <a href="#" id="showRegister">Зарегистрироваться</a>
-                </p>
-              </form>
+          <div class="modal-backdrop"></div>
+          <div class="modal-container">
+            <div class="modal-content">
+              <button class="close">&times;</button>
+              
+              <div class="auth-forms">
+                <form id="loginForm" class="auth-form active">
+                  <h2>Вход в систему</h2>
+                  <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="Email" required>
+                  </div>
+                  <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Пароль" required>
+                  </div>
+                  <button type="submit" class="btn-primary">Войти</button>
+                  <p class="auth-switch">
+                    Нет аккаунта? <a href="#" id="showRegister">Зарегистрироваться</a>
+                  </p>
+                </form>
 
-              <form id="registerForm" class="auth-form">
-                <h2>Регистрация</h2>
-                <div class="input-group">
-                  <i class="fas fa-user"></i>
-                  <input type="text" id="registerName" placeholder="Имя" required>
-                </div>
-                <div class="input-group">
-                  <i class="fas fa-envelope"></i>
-                  <input type="email" id="registerEmail" placeholder="Email" required>
-                </div>
-                <div class="input-group">
-                  <i class="fas fa-lock"></i>
-                  <input type="password" id="registerPassword" placeholder="Пароль" required>
-                </div>
-                <button type="submit" class="btn-primary">Зарегистрироваться</button>
-                <p class="auth-switch">
-                  Уже есть аккаунт? <a href="#" id="showLogin">Войти</a>
-                </p>
-              </form>
+                <form id="registerForm" class="auth-form">
+                  <h2>Регистрация</h2>
+                  <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="registerName" placeholder="Имя" required>
+                  </div>
+                  <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" placeholder="Email" required>
+                  </div>
+                  <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerPassword" placeholder="Пароль" required>
+                  </div>
+                  <button type="submit" class="btn-primary">Зарегистрироваться</button>
+                  <p class="auth-switch">
+                    Уже есть аккаунт? <a href="#" id="showLogin">Войти</a>
+                  </p>
+                </form>
+              </div>
             </div>
           </div>
         </div>
@@ -125,16 +133,17 @@ class KnowledgeBaseApp {
 
     userIcon.addEventListener('click', () => {
       authModal.style.display = 'block';
+      setTimeout(() => {
+        authModal.classList.add('active');
+      }, 10);
     });
 
     closeModal.addEventListener('click', () => {
-      authModal.style.display = 'none';
+      this.closeModal();
     });
 
-    window.addEventListener('click', (e) => {
-      if (e.target === authModal) {
-        authModal.style.display = 'none';
-      }
+    authModal.querySelector('.modal-backdrop').addEventListener('click', () => {
+      this.closeModal();
     });
 
     showRegister.addEventListener('click', (e) => {
@@ -174,6 +183,14 @@ class KnowledgeBaseApp {
     });
   }
 
+  closeModal() {
+    const authModal = document.getElementById('authModal');
+    authModal.classList.remove('active');
+    setTimeout(() => {
+      authModal.style.display = 'none';
+    }, 300);
+  }
+
   handleRegister() {
     const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
@@ -206,7 +223,7 @@ class KnowledgeBaseApp {
     if (user) {
       this.showNotification('Вход выполнен успешно!', 'success');
       localStorage.setItem('currentUser', JSON.stringify(user));
-      document.getElementById('authModal').style.display = 'none';
+      this.closeModal();
       document.getElementById('loginForm').reset();
       this.checkAuth();
     } else {
@@ -261,9 +278,10 @@ class KnowledgeBaseApp {
       return;
     }
     
-    results.forEach(result => {
+    results.forEach((result, index) => {
       const resultElement = document.createElement('div');
       resultElement.className = 'result-item';
+      resultElement.style.animationDelay = `${index * 0.1}s`;
       resultElement.innerHTML = `
         <div class="result-icon">
           <i class="fas fa-file-alt"></i>
@@ -288,24 +306,35 @@ class KnowledgeBaseApp {
     modal.className = 'result-modal';
     modal.innerHTML = `
       <div class="modal-backdrop"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>${result.title}</h2>
-          <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p>${result.content}</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary">Закрыть</button>
+      <div class="modal-container">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>${result.title}</h2>
+            <button class="modal-close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>${result.content}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary">Закрыть</button>
+          </div>
         </div>
       </div>
     `;
     
     document.body.appendChild(modal);
     
+    setTimeout(() => {
+      modal.classList.add('active');
+    }, 10);
+    
     const closeModal = () => {
-      document.body.removeChild(modal);
+      modal.classList.remove('active');
+      setTimeout(() => {
+        if (modal.parentNode) {
+          document.body.removeChild(modal);
+        }
+      }, 300);
     };
     
     modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
