@@ -27,13 +27,13 @@ export default defineConfig({
         }
     },
     server: {
-        port: 3000,
+        port: 3001,
         host: true,
         open: true,
         cors: true
     },
     preview: {
-        port: 3000,
+        port: 3001,
         host: true
     },
     css: {
