@@ -7,7 +7,7 @@ import { promisify } from 'util';
 const sleep = promisify(setTimeout);
 
 const pool = new Pool({
-    user: 'kb_user',
+    user: 'postgres',
     host: 'localhost',
     database: 'knowledge_base',
     password: '1234',
