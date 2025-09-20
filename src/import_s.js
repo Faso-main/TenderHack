@@ -19,7 +19,7 @@ async function importSessions() {
     let imported = 0;
     let errors = 0;
 
-    console.log('📥 Начинаем импорт котировочных сессий...');
+    console.log('Начинаем импорт котировочных сессий...');
 
     // Создаем read stream для CSV файла
     createReadStream('sessions.csv')
