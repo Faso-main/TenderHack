@@ -55,7 +55,7 @@ async function importSessions() {
                 for (const [index, item] of results.entries()) {
                     try {
                         await client.query(
-                            `INSERT INTO quotation_sessions (
+                            `INSERT INTO sessions (
                                 session_name, session_id, session_amount, creation_date,
                                 completion_date, category, customer_name, customer_inn, 
                                 supplier_name, supplier_inn, law_basis
