@@ -2,12 +2,9 @@ import { Pool } from 'pg';
 import fs from 'fs';
 import csv from 'csv-parser';
 import { createReadStream } from 'fs';
-import { promisify } from 'util';
-
-const sleep = promisify(setTimeout);
 
 const pool = new Pool({
-    user: 'postgres',
+    user: 'kb_user',
     host: 'localhost',
     database: 'knowledge_base',
     password: '1234',
@@ -21,7 +18,6 @@ async function importSessions() {
 
     console.log('Начинаем импорт котировочных сессий...');
 
-    // Создаем read stream для CSV файла
     createReadStream('sessions.csv')
         .pipe(csv({
             headers: [
@@ -29,10 +25,9 @@ async function importSessions() {
                 'completion_date', 'category', 'customer_name', 'customer_inn',
                 'supplier_name', 'supplier_inn', 'law_basis'
             ],
-            skipLines: 1 // Пропускаем заголовок
+            skipLines: 1
         }))
         .on('data', (data) => {
-            // Очищаем и форматируем данные
             const cleanedData = {
                 session_name: data.session_name?.trim() || '',
                 session_id: data.session_id?.trim() || '',
@@ -51,13 +46,12 @@ async function importSessions() {
             results.push(cleanedData);
         })
         .on('end', async () => {
-            console.log(`📊 Прочитано ${results.length} записей из CSV`);
+            console.log(`Прочитано ${results.length} записей из CSV`);
 
             const client = await pool.connect();
             
             try {
-                await client.query('BEGIN');
-
+                // НЕ используем транзакцию, чтобы ошибки не прерывали весь импорт
                 for (const [index, item] of results.entries()) {
                     try {
                         await client.query(
@@ -65,18 +59,7 @@ async function importSessions() {
                                 session_name, session_id, session_amount, creation_date,
                                 completion_date, category, customer_name, customer_inn, 
                                 supplier_name, supplier_inn, law_basis
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                            ON CONFLICT (session_id) DO UPDATE SET
-                                session_name = EXCLUDED.session_name,
-                                session_amount = EXCLUDED.session_amount,
-                                creation_date = EXCLUDED.creation_date,
-                                completion_date = EXCLUDED.completion_date,
-                                category = EXCLUDED.category,
-                                customer_name = EXCLUDED.customer_name,
-                                customer_inn = EXCLUDED.customer_inn,
-                                supplier_name = EXCLUDED.supplier_name,
-                                supplier_inn = EXCLUDED.supplier_inn,
-                                law_basis = EXCLUDED.law_basis`,
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
                             [
                                 item.session_name,
                                 item.session_id,
@@ -94,33 +77,26 @@ async function importSessions() {
 
                         imported++;
                         
-                        // Логируем прогресс каждые 100 записей
                         if (imported % 100 === 0) {
                             console.log(`Импортировано ${imported} записей`);
-                        }
-
-                        // Небольшая задержка чтобы не перегружать базу
-                        if (index % 50 === 0) {
-                            await sleep(10);
                         }
 
                     } catch (error) {
                         errors++;
                         console.error(`Ошибка при импорте записи ${index + 1}:`, error.message);
-                        console.error('Данные:', item);
+                        
+                        // Пропускаем проблемную запись и продолжаем
+                        continue;
                     }
                 }
-
-                await client.query('COMMIT');
                 
-                console.log('\nИмпорт котировочных сессий завершен!');
+                console.log('Импорт котировочных сессий завершен');
                 console.log(`Успешно импортировано: ${imported}`);
                 console.log(`Ошибок: ${errors}`);
                 console.log(`Всего обработано: ${results.length}`);
 
             } catch (error) {
-                await client.query('ROLLBACK');
-                console.error('Ошибка транзакции:', error);
+                console.error('Ошибка:', error);
             } finally {
                 client.release();
                 await pool.end();
@@ -131,5 +107,4 @@ async function importSessions() {
         });
 }
 
-// Запуск импорта
 importSessions();
