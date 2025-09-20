@@ -32,7 +32,6 @@ class KnowledgeBaseApp {
                     <div class="search-container">
                         <div class="search-header">
                             <h1>Smart - строка</h1>
-                            <p class="search-subtitle">Умный поиск по контрактам и котировочным сессиям</p>
                         </div>
                         
                         <div class="search-box">
