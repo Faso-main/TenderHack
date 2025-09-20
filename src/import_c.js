@@ -19,7 +19,7 @@ async function importContracts() {
     let imported = 0;
     let errors = 0;
 
-    console.log('📥 Начинаем импорт контрактов...');
+    console.log('Начинаем импорт контрактов...');
 
     // Создаем read stream для CSV файла
     createReadStream('contracts.csv')
@@ -49,7 +49,7 @@ async function importContracts() {
             results.push(cleanedData);
         })
         .on('end', async () => {
-            console.log(`📊 Прочитано ${results.length} записей из CSV`);
+            console.log(`Прочитано ${results.length} записей из CSV`);
 
             const client = await pool.connect();
             
@@ -92,7 +92,7 @@ async function importContracts() {
                         
                         // Логируем прогресс каждые 100 записей
                         if (imported % 100 === 0) {
-                            console.log(`✅ Импортировано ${imported} записей`);
+                            console.log(`Импортировано ${imported} записей`);
                         }
 
                         // Небольшая задержка чтобы не перегружать базу
@@ -102,28 +102,28 @@ async function importContracts() {
 
                     } catch (error) {
                         errors++;
-                        console.error(`❌ Ошибка при импорте записи ${index + 1}:`, error.message);
+                        console.error(`Ошибка при импорте записи ${index + 1}:`, error.message);
                         console.error('Данные:', item);
                     }
                 }
 
                 await client.query('COMMIT');
                 
-                console.log('\n🎉 Импорт завершен!');
-                console.log(`✅ Успешно импортировано: ${imported}`);
-                console.log(`❌ Ошибок: ${errors}`);
-                console.log(`📊 Всего обработано: ${results.length}`);
+                console.log('\nИмпорт завершен!');
+                console.log(`Успешно импортировано: ${imported}`);
+                console.log(`Ошибок: ${errors}`);
+                console.log(`Всего обработано: ${results.length}`);
 
             } catch (error) {
                 await client.query('ROLLBACK');
-                console.error('❌ Ошибка транзакции:', error);
+                console.error('Ошибка транзакции:', error);
             } finally {
                 client.release();
                 await pool.end();
             }
         })
         .on('error', (error) => {
-            console.error('❌ Ошибка чтения CSV файла:', error);
+            console.error('Ошибка чтения CSV файла:', error);
         });
 }
 
