@@ -10,7 +10,7 @@ const pool = new Pool({
     user: 'kb_user',
     host: 'localhost',
     database: 'knowledge_base',
-    password: 'your_secure_password',
+    password: '1234',
     port: 5432,
 });
 
