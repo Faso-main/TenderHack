@@ -32,27 +32,14 @@ class KnowledgeBaseApp {
                     <div class="search-container">
                         <div class="search-header">
                             <h1>Smart - строка</h1>
-                            <div class="search-type-selector">
-                                <label>
-                                    <input type="radio" name="searchType" value="all" checked>
-                                    Все данные
-                                </label>
-                                <label>
-                                    <input type="radio" name="searchType" value="contracts">
-                                    Контракты
-                                </label>
-                                <label>
-                                    <input type="radio" name="searchType" value="sessions">
-                                    Котировочные сессии
-                                </label>
-                            </div>
+                            <p class="search-subtitle">Умный поиск по контрактам и котировочным сессиям</p>
                         </div>
                         
                         <div class="search-box">
-                            <input type="text" id="searchInput" placeholder="Введите номер контракта, ИНН, название организации...">
+                            <input type="text" id="searchInput" placeholder="Введите ID, ИНН, название организации, сумму...">
                             <button id="searchButton">
                                 <i class="fas fa-search"></i>
-                                <span>Поиск</span>
+                                <span>Найти</span>
                             </button>
                         </div>
                         
@@ -178,13 +165,6 @@ class KnowledgeBaseApp {
                 this.performSearch();
             }, 300);
         });
-
-        // Обработчики для переключателя типа поиска
-        document.querySelectorAll('input[name="searchType"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                this.performSearch();
-            });
-        });
     }
 
     closeModal() {
@@ -270,7 +250,6 @@ class KnowledgeBaseApp {
 
     async performSearch() {
         const query = document.getElementById('searchInput').value.trim();
-        const searchType = document.querySelector('input[name="searchType"]:checked').value;
         const searchResults = document.getElementById('searchResults');
         const searchStats = document.getElementById('searchStats');
         
@@ -283,7 +262,7 @@ class KnowledgeBaseApp {
         try {
             searchResults.innerHTML = '<div class="loading">Поиск...</div>';
             
-            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${searchType}`);
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
             
             if (!response.ok) {
                 throw new Error('Ошибка поиска');
@@ -323,13 +302,7 @@ class KnowledgeBaseApp {
         }
         
         // Обновляем статистику
-        const contractsCount = results.filter(item => item.data_type === 'contract').length;
-        const sessionsCount = results.filter(item => item.data_type === 'quotation_session').length;
-        searchStats.innerHTML = `
-            <div class="stats">
-                Найдено: ${results.length} (Контракты: ${contractsCount}, Котировки: ${sessionsCount})
-            </div>
-        `;
+        searchStats.innerHTML = `<div class="stats">Найдено: ${results.length} записей</div>`;
         
         results.forEach((item, index) => {
             const isContract = item.data_type === 'contract';
@@ -345,15 +318,19 @@ class KnowledgeBaseApp {
                     <i class="fas ${isContract ? 'fa-file-contract' : 'fa-chart-line'}"></i>
                 </div>
                 <div class="result-content">
-                    <h3>${isContract ? item.contract_name : item.session_name}</h3>
+                    <div class="result-header">
+                        <h3>${isContract ? item.contract_name : item.session_name}</h3>
+                        <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировка'}</span>
+                    </div>
                     <div class="result-details">
                         <p><strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}</p>
-                        <p><strong>Заказчик:</strong> ${item.customer_name} (ИНН: ${item.customer_inn})</p>
-                        <p><strong>Поставщик:</strong> ${item.supplier_name} (ИНН: ${item.supplier_inn})</p>
+                        <p><strong>Заказчик:</strong> ${item.customer_name}</p>
+                        <p><strong>ИНН заказчика:</strong> ${item.customer_inn}</p>
+                        <p><strong>Поставщик:</strong> ${item.supplier_name}</p>
+                        <p><strong>ИНН поставщика:</strong> ${item.supplier_inn}</p>
                         <p><strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.</p>
                         <p><strong>Дата:</strong> ${date.toLocaleDateString('ru-RU')}</p>
                         <p><strong>Основание:</strong> ${item.law_basis}</p>
-                        ${item.category ? `<p><strong>Категория:</strong> ${item.category}</p>` : ''}
                     </div>
                 </div>
                 <div class="result-arrow">
@@ -392,6 +369,9 @@ class KnowledgeBaseApp {
                                 <strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}
                             </div>
                             <div class="detail-item">
+                                <strong>Тип:</strong> ${isContract ? 'Контракт' : 'Котировочная сессия'}
+                            </div>
+                            <div class="detail-item">
                                 <strong>Заказчик:</strong> ${item.customer_name}
                             </div>
                             <div class="detail-item">
@@ -407,7 +387,7 @@ class KnowledgeBaseApp {
                                 <strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.
                             </div>
                             <div class="detail-item">
-                                <strong>Дата:</strong> ${date.toLocaleDateString('ru-RU')} ${date.toLocaleTimeString('ru-RU')}
+                                <strong>Дата ${isContract ? 'заключения' : 'создания'}:</strong> ${date.toLocaleDateString('ru-RU')}
                             </div>
                             ${isContract ? '' : `
                                 <div class="detail-item">
