@@ -22,7 +22,6 @@ const pool = new Pool({
     port: process.env.DB_PORT || 5432,
 });
 
-// Middleware (КРИТИЧЕСКИ ВАЖНО!)
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
