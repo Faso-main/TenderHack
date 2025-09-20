@@ -15,11 +15,11 @@ const PORT = process.env.PORT || 3001;
 
 // Конфигурация PostgreSQL
 const pool = new Pool({
-    user: process.env.DB_USER || 'postgres',
+    user: process.env.DB_USER || 'kb_user',
     host: process.env.DB_HOST || 'localhost',
     database: process.env.DB_NAME || 'knowledge_base',
     password: process.env.DB_PASSWORD || '1234',
-    port: process.env.DB_PORT || 5432,
+    port: process.env.DB_PORT || 6432,
 });
 
 app.use(helmet({
