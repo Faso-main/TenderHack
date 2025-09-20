@@ -1,0 +1,44 @@
+-- Таблица для контрактов
+CREATE TABLE contracts (
+    id SERIAL PRIMARY KEY,
+    contract_name VARCHAR(500) NOT NULL,
+    contract_id VARCHAR(100) NOT NULL UNIQUE,
+    contract_amount DECIMAL(15, 5) NOT NULL,
+    contract_date TIMESTAMP NOT NULL,
+    category VARCHAR(300),
+    customer_name VARCHAR(500) NOT NULL,
+    customer_inn VARCHAR(20) NOT NULL,
+    supplier_name VARCHAR(500) NOT NULL,
+    supplier_inn VARCHAR(20) NOT NULL,
+    law_basis VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица для котировочных сессий
+CREATE TABLE quotation_sessions (
+    id SERIAL PRIMARY KEY,
+    session_name VARCHAR(500) NOT NULL,
+    session_id VARCHAR(100) NOT NULL UNIQUE,
+    session_amount DECIMAL(15, 5) NOT NULL,
+    creation_date TIMESTAMP NOT NULL,
+    completion_date TIMESTAMP NOT NULL,
+    category VARCHAR(300),
+    customer_name VARCHAR(500) NOT NULL,
+    customer_inn VARCHAR(20) NOT NULL,
+    supplier_name VARCHAR(500) NOT NULL,
+    supplier_inn VARCHAR(20) NOT NULL,
+    law_basis VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Индексы для поиска
+CREATE INDEX idx_contracts_search ON contracts USING gin (
+    to_tsvector('russian', contract_name || ' ' || customer_name || ' ' || supplier_name)
+);
+
+CREATE INDEX idx_quotation_sessions_search ON quotation_sessions USING gin (
+    to_tsvector('russian', session_name || ' ' || customer_name || ' ' || supplier_name)
+);
+
+CREATE INDEX idx_contracts_date ON contracts(contract_date);
+CREATE INDEX idx_quotation_sessions_date ON quotation_sessions(creation_date);
