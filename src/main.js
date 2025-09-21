@@ -245,8 +245,6 @@ class KnowledgeBaseApp {
     
     profileContent.innerHTML = `
         <div class="modal-header">
-            <h2>Личный кабинет</h2>
-            <button class="modal-close">&times;</button>
         </div>
         <div class="profile-info">
             <div class="profile-item">
