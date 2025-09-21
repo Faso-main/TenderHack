@@ -73,7 +73,7 @@ app.get('/api/health', async (req, res) => {
 
 // Поиск по контрактам и котировочным сессиям
 app.get('/api/search', async (req, res) => {
-    console.log('🔍 Поисковый запрос:', req.query.q);
+    console.log('Поисковый запрос:', req.query.q);
     
     try {
         const { q } = req.query;

@@ -2,6 +2,7 @@ import './styles/main.css';
 
 class KnowledgeBaseApp {
     constructor() {
+        this.searchSuggestions = [];
         this.init();
     }
 
@@ -35,11 +36,32 @@ class KnowledgeBaseApp {
                             </button>
                         </div>
                         
-                        <div class="search-stats" id="searchStats"></div>
+                        <!-- Блок рекомендаций -->
+                        <div id="searchSuggestions" class="search-suggestions"></div>
                         
-                        <div id="searchResults" class="search-results"></div>
+                        <div class="search-stats" id="searchStats"></div>
                     </div>
                 </main>
+
+                <!-- Модальное окно с результатами -->
+                <div id="resultsModal" class="modal results-modal">
+                    <div class="modal-backdrop"></div>
+                    <div class="modal-container">
+                        <div class="modal-content">
+                            <button class="close">&times;</button>
+                            <div class="modal-header">
+                                <h2>Результаты поиска</h2>
+                                <div class="search-query">По запросу: <span id="modalQuery"></span></div>
+                            </div>
+                            <div class="modal-body">
+                                <div id="modalResults" class="modal-results"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn-secondary" id="closeResults">Закрыть</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div id="authModal" class="modal">
                     <div class="modal-backdrop"></div>
@@ -94,13 +116,15 @@ class KnowledgeBaseApp {
     setupEventListeners() {
         const userIcon = document.getElementById('userIcon');
         const authModal = document.getElementById('authModal');
-        const closeModal = document.querySelector('.close');
+        const resultsModal = document.getElementById('resultsModal');
+        const closeButtons = document.querySelectorAll('.close');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
         const showRegister = document.getElementById('showRegister');
         const showLogin = document.getElementById('showLogin');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
+        const closeResultsBtn = document.getElementById('closeResults');
 
         userIcon.addEventListener('click', () => {
             authModal.style.display = 'block';
@@ -109,12 +133,23 @@ class KnowledgeBaseApp {
             }, 10);
         });
 
-        closeModal.addEventListener('click', () => {
-            this.closeModal();
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal');
+                this.closeModal(modal);
+            });
         });
 
         authModal.querySelector('.modal-backdrop').addEventListener('click', () => {
-            this.closeModal();
+            this.closeModal(authModal);
+        });
+
+        resultsModal.querySelector('.modal-backdrop').addEventListener('click', () => {
+            this.closeModal(resultsModal);
+        });
+
+        closeResultsBtn.addEventListener('click', () => {
+            this.closeModal(resultsModal);
         });
 
         showRegister.addEventListener('click', (e) => {
@@ -140,119 +175,156 @@ class KnowledgeBaseApp {
         });
 
         searchButton.addEventListener('click', () => {
-            this.performSearch();
+            this.showSearchResults();
         });
 
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                this.performSearch();
+                this.showSearchResults();
             }
         });
 
-        // Дебаунс для поиска при вводе
+        // Дебаунс для поисковых подсказок
         let searchTimeout;
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                this.performSearch();
+                this.getSearchSuggestions();
             }, 300);
+        });
+
+        // Закрытие модальных окон по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const openModal = document.querySelector('.modal.active');
+                if (openModal) {
+                    this.closeModal(openModal);
+                }
+            }
         });
     }
 
-    closeModal() {
-        const authModal = document.getElementById('authModal');
-        authModal.classList.remove('active');
+    closeModal(modal) {
+        modal.classList.remove('active');
         setTimeout(() => {
-            authModal.style.display = 'none';
+            modal.style.display = 'none';
         }, 300);
     }
 
-    async handleRegister() {
-        const name = document.getElementById('registerName').value;
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-        
-        try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, email, password })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                this.showNotification('Регистрация успешна! Теперь вы можете войти.', 'success');
-                document.getElementById('registerForm').classList.remove('active');
-                document.getElementById('loginForm').classList.add('active');
-                document.getElementById('registerForm').reset();
-            } else {
-                this.showNotification(data.error, 'error');
-            }
-        } catch (error) {
-            this.showNotification('Ошибка соединения с сервером', 'error');
-        }
-    }
-
-    async handleLogin() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        
-        try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                this.showNotification('Вход выполнен успешно!', 'success');
-                localStorage.setItem('currentUser', JSON.stringify(data.user));
-                this.closeModal();
-                document.getElementById('loginForm').reset();
-                this.checkAuth();
-            } else {
-                this.showNotification(data.error, 'error');
-            }
-        } catch (error) {
-            this.showNotification('Ошибка соединения с сервером', 'error');
-        }
-    }
-
-    checkAuth() {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        const userIcon = document.getElementById('userIcon');
-        
-        if (currentUser) {
-            userIcon.innerHTML = `<i class="fas fa-user-check"></i>`;
-            userIcon.title = `${currentUser.name}`;
-            userIcon.classList.add('authenticated');
-        } else {
-            userIcon.innerHTML = `<i class="fas fa-user"></i>`;
-            userIcon.title = 'Личный кабинет';
-            userIcon.classList.remove('authenticated');
-        }
-    }
-
-    async performSearch() {
+    async getSearchSuggestions() {
         const query = document.getElementById('searchInput').value.trim();
-        const searchResults = document.getElementById('searchResults');
-        const searchStats = document.getElementById('searchStats');
+        const suggestionsContainer = document.getElementById('searchSuggestions');
         
         if (query === '') {
-            searchResults.innerHTML = '';
-            searchStats.innerHTML = '';
+            suggestionsContainer.innerHTML = '';
             return;
         }
         
         try {
-            searchResults.innerHTML = '<div class="loading">Поиск...</div>';
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`);
+            
+            if (!response.ok) {
+                throw new Error('Ошибка получения подсказок');
+            }
+            
+            const results = await response.json();
+            this.displaySearchSuggestions(results, query);
+            
+        } catch (error) {
+            console.error('Suggestions error:', error);
+            // Не показываем ошибку пользователю для подсказок
+        }
+    }
+
+    displaySearchSuggestions(results, query) {
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        suggestionsContainer.innerHTML = '';
+        
+        if (results.length === 0) {
+            suggestionsContainer.innerHTML = `
+                <div class="suggestion-item">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Попробуйте изменить запрос или использовать ID/ИНН</span>
+                </div>
+            `;
+            return;
+        }
+        
+        // Группируем результаты по типам
+        const contracts = results.filter(item => item.data_type === 'contract');
+        const sessions = results.filter(item => item.data_type === 'quotation_session');
+        
+        if (contracts.length > 0) {
+            suggestionsContainer.innerHTML += `
+                <div class="suggestion-category">
+                    <i class="fas fa-file-contract"></i>
+                    Контракты (${contracts.length})
+                </div>
+            `;
+            contracts.slice(0, 3).forEach(item => {
+                suggestionsContainer.innerHTML += `
+                    <div class="suggestion-item" data-id="${item.contract_id}" data-type="contract">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>${item.contract_name} (${item.contract_id})</span>
+                    </div>
+                `;
+            });
+        }
+        
+        if (sessions.length > 0) {
+            suggestionsContainer.innerHTML += `
+                <div class="suggestion-category">
+                    <i class="fas fa-chart-line"></i>
+                    Котировки (${sessions.length})
+                </div>
+            `;
+            sessions.slice(0, 3).forEach(item => {
+                suggestionsContainer.innerHTML += `
+                    <div class="suggestion-item" data-id="${item.session_id}" data-type="session">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>${item.session_name} (${item.session_id})</span>
+                    </div>
+                `;
+            });
+        }
+        
+        // Добавляем общую рекомендацию
+        suggestionsContainer.innerHTML += `
+            <div class="suggestion-item suggestion-main">
+                <i class="fas fa-search"></i>
+                <span>Нажмите "Найти" чтобы увидеть все результаты (${results.length})</span>
+            </div>
+        `;
+        
+        // Добавляем обработчики кликов на подсказки
+        document.querySelectorAll('.suggestion-item[data-id]').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = item.getAttribute('data-id');
+                document.getElementById('searchInput').value = id;
+                this.showSearchResults();
+            });
+        });
+    }
+
+    async showSearchResults() {
+        const query = document.getElementById('searchInput').value.trim();
+        const resultsModal = document.getElementById('resultsModal');
+        const modalQuery = document.getElementById('modalQuery');
+        const modalResults = document.getElementById('modalResults');
+        
+        if (query === '') {
+            this.showNotification('Введите поисковый запрос', 'warning');
+            return;
+        }
+        
+        try {
+            modalResults.innerHTML = '<div class="loading">Поиск...</div>';
+            modalQuery.textContent = query;
+            
+            resultsModal.style.display = 'block';
+            setTimeout(() => {
+                resultsModal.classList.add('active');
+            }, 10);
             
             const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
             
@@ -261,11 +333,11 @@ class KnowledgeBaseApp {
             }
             
             const results = await response.json();
-            this.displaySearchResults(results);
+            this.displayModalResults(results);
             
         } catch (error) {
             console.error('Search error:', error);
-            searchResults.innerHTML = `
+            modalResults.innerHTML = `
                 <div class="no-results">
                     <i class="fas fa-exclamation-triangle"></i>
                     <h3>Ошибка поиска</h3>
@@ -275,15 +347,16 @@ class KnowledgeBaseApp {
         }
     }
 
-    displaySearchResults(results) {
-        const searchResults = document.getElementById('searchResults');
+    displayModalResults(results) {
+        const modalResults = document.getElementById('modalResults');
         const searchStats = document.getElementById('searchStats');
         
-        searchResults.innerHTML = '';
+        modalResults.innerHTML = '';
+        searchStats.innerHTML = '';
         
         if (results.length === 0) {
             searchStats.innerHTML = '<div class="stats">Найдено: 0</div>';
-            searchResults.innerHTML = `
+            modalResults.innerHTML = `
                 <div class="no-results">
                     <i class="fas fa-search"></i>
                     <h3>Ничего не найдено</h3>
@@ -322,7 +395,6 @@ class KnowledgeBaseApp {
                         <p><strong>ИНН поставщика:</strong> ${item.supplier_inn}</p>
                         <p><strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.</p>
                         <p><strong>Дата:</strong> ${date.toLocaleDateString('ru-RU')}</p>
-                        <p><strong>Основание:</strong> ${item.law_basis}</p>
                     </div>
                 </div>
                 <div class="result-arrow">
@@ -334,7 +406,7 @@ class KnowledgeBaseApp {
                 this.showResultDetails(item);
             });
             
-            searchResults.appendChild(resultElement);
+            modalResults.appendChild(resultElement);
         });
     }
 
