@@ -36,19 +36,16 @@ class KnowledgeBaseApp {
                             </button>
                         </div>
                         
-                        <!-- Блок рекомендаций -->
                         <div id="searchSuggestions" class="search-suggestions"></div>
                         
                         <div class="search-stats" id="searchStats"></div>
                     </div>
                 </main>
 
-                <!-- Модальное окно с результатами -->
                 <div id="resultsModal" class="modal results-modal">
                     <div class="modal-backdrop"></div>
                     <div class="modal-container">
                         <div class="modal-content">
-                            <button class="close">&times;</button>
                             <div class="modal-header">
                                 <h2>Результаты поиска</h2>
                                 <div class="search-query">По запросу: <span id="modalQuery"></span></div>
@@ -56,8 +53,19 @@ class KnowledgeBaseApp {
                             <div class="modal-body">
                                 <div id="modalResults" class="modal-results"></div>
                             </div>
-                            <div class="modal-footer">
-                                <button class="btn-secondary" id="closeResults">Закрыть</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="profileModal" class="modal profile-modal">
+                    <div class="modal-backdrop"></div>
+                    <div class="modal-container">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Личный кабинет</h2>
+                            </div>
+                            <div class="modal-body">
+                                <div id="profileContent" class="profile-content"></div>
                             </div>
                         </div>
                     </div>
@@ -67,8 +75,6 @@ class KnowledgeBaseApp {
                     <div class="modal-backdrop"></div>
                     <div class="modal-container">
                         <div class="modal-content">
-                            <button class="close">&times;</button>
-                            
                             <div class="auth-forms">
                                 <form id="loginForm" class="auth-form active">
                                     <h2>Вход в систему</h2>
@@ -81,7 +87,7 @@ class KnowledgeBaseApp {
                                         <input type="password" id="loginPassword" placeholder="Пароль" required>
                                     </div>
                                     <button type="submit" class="btn-primary">Войти</button>
-                                    <p class="auth-switch">
+                                    <p class="auth-switch desktop-only">
                                         Нет аккаунта? <a href="#" id="showRegister">Зарегистрироваться</a>
                                     </p>
                                 </form>
@@ -90,7 +96,19 @@ class KnowledgeBaseApp {
                                     <h2>Регистрация</h2>
                                     <div class="input-group">
                                         <i class="fas fa-user"></i>
-                                        <input type="text" id="registerName" placeholder="Имя" required>
+                                        <input type="text" id="registerName" placeholder="ФИО" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <i class="fas fa-building"></i>
+                                        <input type="text" id="registerCompany" placeholder="Название компании" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <i class="fas fa-id-card"></i>
+                                        <input type="text" id="registerInn" placeholder="ИНН" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <i class="fas fa-phone"></i>
+                                        <input type="tel" id="registerPhone" placeholder="Телефон" required>
                                     </div>
                                     <div class="input-group">
                                         <i class="fas fa-envelope"></i>
@@ -101,7 +119,7 @@ class KnowledgeBaseApp {
                                         <input type="password" id="registerPassword" placeholder="Пароль" required>
                                     </div>
                                     <button type="submit" class="btn-primary">Зарегистрироваться</button>
-                                    <p class="auth-switch">
+                                    <p class="auth-switch desktop-only">
                                         Уже есть аккаунт? <a href="#" id="showLogin">Войти</a>
                                     </p>
                                 </form>
@@ -112,73 +130,67 @@ class KnowledgeBaseApp {
             </div>
         `;
     }
-    
-    checkAuth() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    const userIcon = document.getElementById('userIcon');
-    
-    if (currentUser) {
-        userIcon.innerHTML = `<i class="fas fa-user-check"></i>`;  // ← Эту строку нужно изменить
-        userIcon.title = `${currentUser.name}`;
-        userIcon.classList.add('authenticated');
-    } else {
-        userIcon.innerHTML = `<i class="fas fa-user"></i>`;
-        userIcon.title = 'Личный кабинет';
-        userIcon.classList.remove('authenticated');
-    }
-}
 
+    checkAuth() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const userIcon = document.getElementById('userIcon');
+        
+        if (currentUser) {
+            userIcon.innerHTML = `<i class="fas fa-user"></i>`;
+            userIcon.title = `${currentUser.name}`;
+            userIcon.classList.add('authenticated');
+        } else {
+            userIcon.innerHTML = `<i class="fas fa-user"></i>`;
+            userIcon.title = 'Личный кабинет';
+            userIcon.classList.remove('authenticated');
+        }
+    }
 
     setupEventListeners() {
         const userIcon = document.getElementById('userIcon');
         const authModal = document.getElementById('authModal');
         const resultsModal = document.getElementById('resultsModal');
-        const closeButtons = document.querySelectorAll('.close');
+        const profileModal = document.getElementById('profileModal');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
         const showRegister = document.getElementById('showRegister');
         const showLogin = document.getElementById('showLogin');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
-        const closeResultsBtn = document.getElementById('closeResults');
 
         userIcon.addEventListener('click', () => {
-            authModal.style.display = 'block';
-            setTimeout(() => {
-                authModal.classList.add('active');
-            }, 10);
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser) {
+                this.showProfileModal(currentUser);
+            } else {
+                authModal.style.display = 'block';
+                setTimeout(() => {
+                    authModal.classList.add('active');
+                }, 10);
+            }
         });
 
-        closeButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const modal = e.target.closest('.modal');
+        [authModal, resultsModal, profileModal].forEach(modal => {
+            modal.querySelector('.modal-backdrop').addEventListener('click', () => {
                 this.closeModal(modal);
             });
         });
 
-        authModal.querySelector('.modal-backdrop').addEventListener('click', () => {
-            this.closeModal(authModal);
-        });
+        if (showRegister) {
+            showRegister.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginForm.classList.remove('active');
+                registerForm.classList.add('active');
+            });
+        }
 
-        resultsModal.querySelector('.modal-backdrop').addEventListener('click', () => {
-            this.closeModal(resultsModal);
-        });
-
-        closeResultsBtn.addEventListener('click', () => {
-            this.closeModal(resultsModal);
-        });
-
-        showRegister.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginForm.classList.remove('active');
-            registerForm.classList.add('active');
-        });
-
-        showLogin.addEventListener('click', (e) => {
-            e.preventDefault();
-            registerForm.classList.remove('active');
-            loginForm.classList.add('active');
-        });
+        if (showLogin) {
+            showLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                registerForm.classList.remove('active');
+                loginForm.classList.add('active');
+            });
+        }
 
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -200,7 +212,6 @@ class KnowledgeBaseApp {
             }
         });
 
-        // Дебаунс для поисковых подсказок
         let searchTimeout;
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimeout);
@@ -209,7 +220,6 @@ class KnowledgeBaseApp {
             }, 300);
         });
 
-        // Закрытие модальных окон по ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const openModal = document.querySelector('.modal.active');
@@ -225,6 +235,127 @@ class KnowledgeBaseApp {
         setTimeout(() => {
             modal.style.display = 'none';
         }, 300);
+    }
+
+    showProfileModal(user) {
+        const profileModal = document.getElementById('profileModal');
+        const profileContent = document.getElementById('profileContent');
+        
+        profileContent.innerHTML = `
+            <div class="profile-info">
+                <div class="profile-item">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <strong>ФИО:</strong>
+                        <span>${user.name}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-building"></i>
+                    <div>
+                        <strong>Компания:</strong>
+                        <span>${user.company || 'Не указано'}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-id-card"></i>
+                    <div>
+                        <strong>ИНН:</strong>
+                        <span>${user.inn || 'Не указано'}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <strong>Телефон:</strong>
+                        <span>${user.phone || 'Не указано'}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong>Email:</strong>
+                        <span>${user.email}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="btn-primary" id="logoutBtn">Выйти</button>
+            </div>
+        `;
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            this.closeModal(profileModal);
+            this.checkAuth();
+            this.showNotification('Вы вышли из системы', 'success');
+        });
+
+        profileModal.style.display = 'block';
+        setTimeout(() => {
+            profileModal.classList.add('active');
+        }, 10);
+    }
+
+    async handleRegister() {
+        const name = document.getElementById('registerName').value;
+        const company = document.getElementById('registerCompany').value;
+        const inn = document.getElementById('registerInn').value;
+        const phone = document.getElementById('registerPhone').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, company, inn, phone, email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showNotification('Регистрация успешна! Теперь вы можете войти.', 'success');
+                document.getElementById('registerForm').classList.remove('active');
+                document.getElementById('loginForm').classList.add('active');
+                document.getElementById('registerForm').reset();
+            } else {
+                this.showNotification(data.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Ошибка соединения с сервером', 'error');
+        }
+    }
+
+    async handleLogin() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showNotification('Вход выполнен успешно!', 'success');
+                localStorage.setItem('currentUser', JSON.stringify(data.user));
+                this.closeModal(document.getElementById('authModal'));
+                document.getElementById('loginForm').reset();
+                this.checkAuth();
+            } else {
+                this.showNotification(data.error, 'error');
+            }
+        } catch (error) {
+            this.showNotification('Ошибка соединения с сервером', 'error');
+        }
     }
 
     async getSearchSuggestions() {
@@ -248,7 +379,6 @@ class KnowledgeBaseApp {
             
         } catch (error) {
             console.error('Suggestions error:', error);
-            // Не показываем ошибку пользователю для подсказок
         }
     }
 
@@ -266,7 +396,6 @@ class KnowledgeBaseApp {
             return;
         }
         
-        // Группируем результаты по типам
         const contracts = results.filter(item => item.data_type === 'contract');
         const sessions = results.filter(item => item.data_type === 'quotation_session');
         
@@ -304,7 +433,6 @@ class KnowledgeBaseApp {
             });
         }
         
-        // Добавляем общую рекомендацию
         suggestionsContainer.innerHTML += `
             <div class="suggestion-item suggestion-main">
                 <i class="fas fa-search"></i>
@@ -312,7 +440,6 @@ class KnowledgeBaseApp {
             </div>
         `;
         
-        // Добавляем обработчики кликов на подсказки
         document.querySelectorAll('.suggestion-item[data-id]').forEach(item => {
             item.addEventListener('click', () => {
                 const id = item.getAttribute('data-id');
@@ -382,7 +509,6 @@ class KnowledgeBaseApp {
             return;
         }
         
-        // Обновляем статистику
         searchStats.innerHTML = `<div class="stats">Найдено: ${results.length} записей</div>`;
         
         results.forEach((item, index) => {
@@ -426,85 +552,84 @@ class KnowledgeBaseApp {
         });
     }
 
-    // В методе showResultDetails замените HTML модального окна:
-showResultDetails(item) {
-    const isContract = item.data_type === 'contract';
-    const modal = document.createElement('div');
-    modal.className = 'result-modal';
-    
-    const amount = parseFloat(isContract ? item.contract_amount : item.session_amount);
-    const date = new Date(isContract ? item.contract_date : item.creation_date);
-    
-    modal.innerHTML = `
-        <div class="modal-backdrop"></div>
-        <div class="modal-container">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>${isContract ? item.contract_name : item.session_name}</h2>
-                    <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
-                </div>
-                <div class="modal-body">
-                    <div class="detail-grid">
-                        <div class="detail-item">
-                            <strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}
-                        </div>
-                        <div class="detail-item">
-                            <strong>Тип:</strong> ${isContract ? 'Контракт' : 'Котировочная сессия'}
-                        </div>
-                        <div class="detail-item">
-                            <strong>Заказчик:</strong> ${item.customer_name}
-                        </div>
-                        <div class="detail-item">
-                            <strong>ИНН заказчика:</strong> ${item.customer_inn}
-                        </div>
-                        <div class="detail-item">
-                            <strong>Поставщик:</strong> ${item.supplier_name}
-                        </div>
-                        <div class="detail-item">
-                            <strong>ИНН поставщика:</strong> ${item.supplier_inn}
-                        </div>
-                        <div class="detail-item">
-                            <strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.
-                        </div>
-                        <div class="detail-item">
-                            <strong>Дата ${isContract ? 'заключения' : 'создания'}:</strong> ${date.toLocaleDateString('ru-RU')}
-                        </div>
-                        ${isContract ? '' : `
+    showResultDetails(item) {
+        const isContract = item.data_type === 'contract';
+        const modal = document.createElement('div');
+        modal.className = 'result-modal';
+        
+        const amount = parseFloat(isContract ? item.contract_amount : item.session_amount);
+        const date = new Date(isContract ? item.contract_date : item.creation_date);
+        
+        modal.innerHTML = `
+            <div class="modal-backdrop"></div>
+            <div class="modal-container">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>${isContract ? item.contract_name : item.session_name}</h2>
+                        <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="detail-grid">
                             <div class="detail-item">
-                                <strong>Дата завершения:</strong> ${new Date(item.completion_date).toLocaleDateString('ru-RU')}
+                                <strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}
                             </div>
-                        `}
-                        <div class="detail-item">
-                            <strong>Правовое основание:</strong> ${item.law_basis}
-                        </div>
-                        ${item.category ? `
                             <div class="detail-item">
-                                <strong>Категория:</strong> ${item.category}
+                                <strong>Тип:</strong> ${isContract ? 'Контракт' : 'Котировочная сессия'}
                             </div>
-                        ` : ''}
+                            <div class="detail-item">
+                                <strong>Заказчик:</strong> ${item.customer_name}
+                            </div>
+                            <div class="detail-item">
+                                <strong>ИНН заказчика:</strong> ${item.customer_inn}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Поставщик:</strong> ${item.supplier_name}
+                            </div>
+                            <div class="detail-item">
+                                <strong>ИНН поставщика:</strong> ${item.supplier_inn}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.
+                            </div>
+                            <div class="detail-item">
+                                <strong>Дата ${isContract ? 'заключения' : 'создания'}:</strong> ${date.toLocaleDateString('ru-RU')}
+                            </div>
+                            ${isContract ? '' : `
+                                <div class="detail-item">
+                                    <strong>Дата завершения:</strong> ${new Date(item.completion_date).toLocaleDateString('ru-RU')}
+                                </div>
+                            `}
+                            <div class="detail-item">
+                                <strong>Правовое основание:</strong> ${item.law_basis}
+                            </div>
+                            ${item.category ? `
+                                <div class="detail-item">
+                                    <strong>Категория:</strong> ${item.category}
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    setTimeout(() => {
-        modal.classList.add('active');
-    }, 10);
-    
-    const closeModal = () => {
-        modal.classList.remove('active');
+        `;
+        
+        document.body.appendChild(modal);
+        
         setTimeout(() => {
-            if (modal.parentNode) {
-                document.body.removeChild(modal);
-            }
-        }, 300);
-    };
-    
-    modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
-}
+            modal.classList.add('active');
+        }, 10);
+        
+        const closeModal = () => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                if (modal.parentNode) {
+                    document.body.removeChild(modal);
+                }
+            }, 300);
+        };
+        
+        modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+    }
 
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
@@ -531,13 +656,11 @@ showResultDetails(item) {
     }
 }
 
-// Добавляем Font Awesome
 const fontAwesome = document.createElement('link');
 fontAwesome.rel = 'stylesheet';
 fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
 document.head.appendChild(fontAwesome);
 
-// Запуск приложения
 document.addEventListener('DOMContentLoaded', () => {
     new KnowledgeBaseApp();
 });
