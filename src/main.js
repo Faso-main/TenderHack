@@ -62,6 +62,9 @@ class KnowledgeBaseApp {
                     <div class="modal-backdrop"></div>
                     <div class="modal-container">
                         <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Личный кабинет</h2>
+                            </div>
                             <div class="modal-body">
                                 <div id="profileContent" class="profile-content"></div>
                             </div>
@@ -241,10 +244,6 @@ class KnowledgeBaseApp {
     const profileContent = document.getElementById('profileContent');
     
     profileContent.innerHTML = `
-        <div class="modal-header">
-            <h2>Личный кабинет</h2>
-            <button class="modal-close">&times;</button>
-        </div>
         <div class="profile-info">
             <div class="profile-item">
                 <i class="fas fa-user"></i>
