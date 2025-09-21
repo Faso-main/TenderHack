@@ -3,6 +3,8 @@ import './styles/main.css';
 class KnowledgeBaseApp {
     constructor() {
         this.searchSuggestions = [];
+        this.searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
+        this.isVectorSearch = true;
         this.init();
     }
 
@@ -25,11 +27,11 @@ class KnowledgeBaseApp {
                 <main class="main-content">
                     <div class="search-container">
                         <div class="search-header">
-                            <h1>Smart - строка</h1>
+                            <h1>Умный поиск</h1>
                         </div>
                         
                         <div class="search-box">
-                            <input type="text" id="searchInput" placeholder="Введите ID, ИНН, название организации, сумму...">
+                            <input type="text" id="searchInput" placeholder="Введите ID, ИНН, название, сумму или описание...">
                             <button id="searchButton">
                                 <i class="fas fa-search"></i>
                                 <span>Найти</span>
@@ -151,16 +153,12 @@ class KnowledgeBaseApp {
         const authModal = document.getElementById('authModal');
         const resultsModal = document.getElementById('resultsModal');
         const profileModal = document.getElementById('profileModal');
-        const createContractModal = document.getElementById('createContractModal');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
         const showRegister = document.getElementById('showRegister');
         const showLogin = document.getElementById('showLogin');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
-        const createContractButton = document.getElementById('createContractButton');
-        const createContractForm = document.getElementById('createContractForm');
-        const cancelCreateContract = document.getElementById('cancelCreateContract');
 
         userIcon.addEventListener('click', () => {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -174,7 +172,7 @@ class KnowledgeBaseApp {
             }
         });
 
-        [authModal, resultsModal, profileModal, createContractModal].forEach(modal => {
+        [authModal, resultsModal, profileModal].forEach(modal => {
             modal.querySelector('.modal-backdrop').addEventListener('click', () => {
                 this.closeModal(modal);
             });
@@ -214,19 +212,6 @@ class KnowledgeBaseApp {
             if (e.key === 'Enter') {
                 this.showSearchResults();
             }
-        });
-
-        createContractButton.addEventListener('click', () => {
-            this.showCreateContractModal();
-        });
-
-        createContractForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleCreateContract();
-        });
-
-        cancelCreateContract.addEventListener('click', () => {
-            this.closeModal(createContractModal);
         });
 
         let searchTimeout;
@@ -313,68 +298,6 @@ class KnowledgeBaseApp {
             profileModal.classList.add('active');
         }, 10);
     }
-    async handleCreateContract() {
-        const contractData = {
-            contract_name: document.getElementById('contractName').value,
-            contract_amount: document.getElementById('contractAmount').value,
-            customer_name: document.getElementById('customerName').value,
-            customer_inn: document.getElementById('customerInn').value,
-            supplier_name: document.getElementById('supplierName').value,
-            supplier_inn: document.getElementById('supplierInn').value,
-            contract_date: document.getElementById('contractDate').value,
-            law_basis: document.getElementById('lawBasis').value,
-            category: document.getElementById('contractCategory').value
-        };
-
-        try {
-            const response = await fetch('/api/contracts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(contractData)
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.showNotification('Контракт успешно создан!', 'success');
-                this.closeModal(document.getElementById('createContractModal'));
-                document.getElementById('createContractForm').reset();
-                
-                // Обновляем результаты поиска, если модальное окно с результатами открыто
-                if (document.getElementById('resultsModal').style.display === 'block') {
-                    this.showSearchResults();
-                }
-            } else {
-                this.showNotification(data.error || 'Ошибка при создании контракта', 'error');
-            }
-        } catch (error) {
-            this.showNotification('Ошибка соединения с сервером', 'error');
-        }
-    }
-    showCreateContractModal() {
-        const createContractModal = document.getElementById('createContractModal');
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        
-        if (!currentUser) {
-            this.showNotification('Для создания контракта необходимо войти в систему', 'warning');
-            document.getElementById('authModal').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('authModal').classList.add('active');
-            }, 10);
-            return;
-        }
-
-        // Установка текущей даты по умолчанию
-        document.getElementById('contractDate').value = new Date().toISOString().split('T')[0];
-        
-        createContractModal.style.display = 'block';
-        setTimeout(() => {
-            createContractModal.classList.add('active');
-        }, 10);
-    }
 
     async handleRegister() {
         const name = document.getElementById('registerName').value;
@@ -437,29 +360,44 @@ class KnowledgeBaseApp {
         }
     }
 
-    async getSearchSuggestions() {
-        const query = document.getElementById('searchInput').value.trim();
-        const suggestionsContainer = document.getElementById('searchSuggestions');
-        
-        if (query === '') {
-            suggestionsContainer.innerHTML = '';
-            return;
-        }
-        
-        try {
-            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`);
-            
-            if (!response.ok) {
-                throw new Error('Ошибка получения подсказок');
-            }
-            
-            const results = await response.json();
-            this.displaySearchSuggestions(results, query);
-            
-        } catch (error) {
-            console.error('Suggestions error:', error);
-        }
+async getSearchSuggestions() {
+    const query = document.getElementById('searchInput').value.trim();
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    if (query === '') {
+        suggestionsContainer.innerHTML = '';
+        this.showRecentSearches();
+        return;
     }
+    
+    try {
+        this.showQuickSuggestions(query);
+        
+        const response = await fetch(`/api/smart-suggestions?q=${encodeURIComponent(query)}&limit=3`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            this.displaySmartSuggestions(data, query);
+        }
+    } catch (error) {
+        console.error('Smart suggestions error:', error);
+    }
+}
+
+async performVectorSearch(query) {
+    try {
+        const response = await fetch(`/api/vector-search?q=${encodeURIComponent(query)}&limit=20`);
+        
+        if (!response.ok) {
+            throw new Error('Ошибка семантического поиска');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Vector search error:', error);
+        return [];
+    }
+}
 
     displaySearchSuggestions(results, query) {
         const suggestionsContainer = document.getElementById('searchSuggestions');
@@ -528,46 +466,106 @@ class KnowledgeBaseApp {
         });
     }
 
-    async showSearchResults() {
-        const query = document.getElementById('searchInput').value.trim();
-        const resultsModal = document.getElementById('resultsModal');
-        const modalQuery = document.getElementById('modalQuery');
-        const modalResults = document.getElementById('modalResults');
+displaySmartSuggestions(data, query) {
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    if ((data.contracts && data.contracts.length > 0) || (data.sessions && data.sessions.length > 0)) {
+        let smartSuggestionsHTML = '';
         
-        if (query === '') {
-            this.showNotification('Введите поисковый запрос', 'warning');
-            return;
-        }
-        
-        try {
-            modalResults.innerHTML = '<div class="loading">Поиск...</div>';
-            modalQuery.textContent = query;
-            
-            resultsModal.style.display = 'block';
-            setTimeout(() => {
-                resultsModal.classList.add('active');
-            }, 10);
-            
-            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-            
-            if (!response.ok) {
-                throw new Error('Ошибка поиска');
-            }
-            
-            const results = await response.json();
-            this.displayModalResults(results);
-            
-        } catch (error) {
-            console.error('Search error:', error);
-            modalResults.innerHTML = `
-                <div class="no-results">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Ошибка поиска</h3>
-                    <p>Попробуйте позже или измените запрос</p>
+        if (data.contracts.length > 0) {
+            smartSuggestionsHTML += `
+                <div class="suggestion-category">
+                    <i class="fas fa-file-contract"></i>
+                    Семантические совпадения в контрактах
                 </div>
             `;
+            
+            data.contracts.forEach(item => {
+                const similarityPercent = Math.round(item.similarity * 100);
+                smartSuggestionsHTML += `
+                    <div class="suggestion-item" data-id="${item.contract_id}" data-type="contract">
+                        <i class="fas fa-magic"></i>
+                        <span>${item.contract_name}</span>
+                        <span class="similarity-badge">${similarityPercent}%</span>
+                    </div>
+                `;
+            });
         }
+        
+        if (data.sessions.length > 0) {
+            smartSuggestionsHTML += `
+                <div class="suggestion-category">
+                    <i class="fas fa-chart-line"></i>
+                    Семантические совпадения в котировках
+                </div>
+            `;
+            
+            data.sessions.forEach(item => {
+                const similarityPercent = Math.round(item.similarity * 100);
+                smartSuggestionsHTML += `
+                    <div class="suggestion-item" data-id="${item.session_id}" data-type="session">
+                        <i class="fas fa-magic"></i>
+                        <span>${item.session_name}</span>
+                        <span class="similarity-badge">${similarityPercent}%</span>
+                    </div>
+                `;
+            });
+        }
+        
+        const quickSuggestions = suggestionsContainer.innerHTML;
+        suggestionsContainer.innerHTML = quickSuggestions + smartSuggestionsHTML;
+        
+        // Добавляем обработчики
+        this.setupSuggestionHandlers();
     }
+}
+
+async showSearchResults() {
+    const query = document.getElementById('searchInput').value.trim();
+    const resultsModal = document.getElementById('resultsModal');
+    const modalQuery = document.getElementById('modalQuery');
+    const modalResults = document.getElementById('modalResults');
+    
+    if (query === '') {
+        this.showNotification('Введите поисковый запрос', 'warning');
+        return;
+    }
+    
+    try {
+        modalResults.innerHTML = '<div class="loading">Семантический поиск...</div>';
+        modalQuery.textContent = query;
+        modalQuery.innerHTML = `По запросу: <span>${query}</span> <span class="search-type-badge">семантический</span>`;
+        
+        resultsModal.style.display = 'block';
+        setTimeout(() => {
+            resultsModal.classList.add('active');
+        }, 10);
+        
+        let results = await this.performVectorSearch(query);
+        
+        if (results.length === 0) {
+            modalQuery.innerHTML = `По запросу: <span>${query}</span> <span class="search-type-badge">текстовый</span>`;
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+            if (response.ok) {
+                results = await response.json();
+            }
+        }
+        
+        this.displayModalResults(results);
+        
+        this.addToSearchHistory(query);
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        modalResults.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Ошибка поиска</h3>
+                <p>Попробуйте позже или измените запрос</p>
+            </div>
+        `;
+    }
+}
 
     displayModalResults(results) {
         const modalResults = document.getElementById('modalResults');
@@ -646,6 +644,7 @@ class KnowledgeBaseApp {
                     <div class="modal-header">
                         <h2>${isContract ? item.contract_name : item.session_name}</h2>
                         <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
+                        <button class="modal-close">&times;</button>
                     </div>
                     <div class="modal-body">
                         <div class="detail-grid">
@@ -708,6 +707,7 @@ class KnowledgeBaseApp {
         };
         
         modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+        modal.querySelector('.modal-close').addEventListener('click', closeModal);
     }
 
     showNotification(message, type = 'info') {
