@@ -48,7 +48,6 @@ class KnowledgeBaseApp {
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h2>Результаты поиска</h2>
-                                <button class="modal-close">&times;</button>
                                 <div class="search-query">По запросу: <span id="modalQuery"></span></div>
                             </div>
                             <div class="modal-body">
@@ -158,7 +157,7 @@ class KnowledgeBaseApp {
         const showLogin = document.getElementById('showLogin');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
-        
+
         userIcon.addEventListener('click', () => {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (currentUser) {
@@ -192,9 +191,7 @@ class KnowledgeBaseApp {
                 loginForm.classList.add('active');
             });
         }
-        resultsModal.querySelector('.modal-close').addEventListener('click', () => {
-    this.closeModal(resultsModal);
-});
+
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleRegister();
@@ -241,123 +238,64 @@ class KnowledgeBaseApp {
     }
 
     showProfileModal(user) {
-    const profileModal = document.getElementById('profileModal');
-    const profileContent = document.getElementById('profileContent');
-    
-    profileContent.innerHTML = `
-        <div class="modal-header">
-            <h2>Личный кабинет</h2>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="profile-info">
-            <div class="profile-item">
-                <i class="fas fa-user"></i>
-                <div>
-                    <strong>ФИО:</strong>
-                    <span>${user.name}</span>
-                </div>
-            </div>
-            <div class="profile-item">
-                <i class="fas fa-building"></i>
-                <div>
-                    <strong>Компания:</strong>
-                    <span>${user.company || 'Не указано'}</span>
-                </div>
-            </div>
-            <div class="profile-item">
-                <i class="fas fa-id-card"></i>
-                <div>
-                    <strong>ИНН:</strong>
-                    <span>${user.inn || 'Не указано'}</span>
-                </div>
-            </div>
-            <div class="profile-item">
-                <i class="fas fa-phone"></i>
-                <div>
-                    <strong>Телефон:</strong>
-                    <span>${user.phone || 'Не указано'}</span>
-                </div>
-            </div>
-            <div class="profile-item">
-                <i class="fas fa-envelope"></i>
-                <div>
-                    <strong>Email:</strong>
-                    <span>${user.email}</span>
-                </div>
-            </div>
-        </div>
+        const profileModal = document.getElementById('profileModal');
+        const profileContent = document.getElementById('profileContent');
         
-        <div class="profile-actions">
-            <button class="btn-primary" id="createTenderBtn">
-                <i class="fas fa-plus"></i>
-                Создать тендер
-            </button>
-            <button class="btn-secondary" id="logoutBtn">
-                <i class="fas fa-sign-out-alt"></i>
-                Выйти
-            </button>
-        </div>
-        
-        <div id="createTenderForm" class="create-tender-form" style="display: none;">
-            <h3>Создание нового тендера</h3>
-            <div class="input-group">
-                <i class="fas fa-heading"></i>
-                <input type="text" id="tenderName" placeholder="Название тендера" required>
+        profileContent.innerHTML = `
+            <div class="profile-info">
+                <div class="profile-item">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <strong>ФИО:</strong>
+                        <span>${user.name}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-building"></i>
+                    <div>
+                        <strong>Компания:</strong>
+                        <span>${user.company || 'Не указано'}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-id-card"></i>
+                    <div>
+                        <strong>ИНН:</strong>
+                        <span>${user.inn || 'Не указано'}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <strong>Телефон:</strong>
+                        <span>${user.phone || 'Не указано'}</span>
+                    </div>
+                </div>
+                <div class="profile-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong>Email:</strong>
+                        <span>${user.email}</span>
+                    </div>
+                </div>
             </div>
-            <div class="input-group">
-                <i class="fas fa-ruble-sign"></i>
-                <input type="number" id="tenderAmount" placeholder="Сумма" required step="0.01">
+            <div class="profile-actions">
+                <button class="btn-primary" id="logoutBtn">Выйти</button>
             </div>
-            <div class="input-group">
-                <i class="fas fa-calendar"></i>
-                <input type="date" id="tenderDate" required>
-            </div>
-            <div class="input-group">
-                <i class="fas fa-balance-scale"></i>
-                <input type="text" id="tenderLawBasis" placeholder="Правовое основание" required>
-            </div>
-            <div class="input-group">
-                <i class="fas fa-tag"></i>
-                <input type="text" id="tenderCategory" placeholder="Категория" required>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn-secondary" id="cancelTender">Отмена</button>
-                <button type="button" class="btn-primary" id="submitTender">Создать</button>
-            </div>
-        </div>
-    `;
+        `;
 
-    // Обработчик закрытия через крестик
-    profileContent.querySelector('.modal-close').addEventListener('click', () => {
-        this.closeModal(profileModal);
-    });
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            this.closeModal(profileModal);
+            this.checkAuth();
+            this.showNotification('Вы вышли из системы', 'success');
+        });
 
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('currentUser');
-        this.closeModal(profileModal);
-        this.checkAuth();
-        this.showNotification('Вы вышли из системы', 'success');
-    });
-
-    document.getElementById('createTenderBtn').addEventListener('click', () => {
-        document.getElementById('createTenderForm').style.display = 'block';
-        document.getElementById('createTenderBtn').style.display = 'none';
-    });
-
-    document.getElementById('cancelTender').addEventListener('click', () => {
-        document.getElementById('createTenderForm').style.display = 'none';
-        document.getElementById('createTenderBtn').style.display = 'block';
-    });
-
-    document.getElementById('submitTender').addEventListener('click', () => {
-        this.createTender();
-    });
-
-    profileModal.style.display = 'block';
-    setTimeout(() => {
-        profileModal.classList.add('active');
-    }, 10);
-}
+        profileModal.style.display = 'block';
+        setTimeout(() => {
+            profileModal.classList.add('active');
+        }, 10);
+    }
 
     async handleRegister() {
         const name = document.getElementById('registerName').value;
