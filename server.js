@@ -22,6 +22,9 @@ const pool = new Pool({
     port: 5432, // Стандартный порт PostgreSQL
 });
 
+// Enable pg_trgm extension
+pool.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;').catch(err => console.error('pg_trgm extension error:', err));
+
 // Middleware
 app.use(helmet({
     contentSecurityPolicy: {
@@ -58,49 +61,6 @@ app.use(express.static(__dirname, {
         }
     }
 }));
-
-app.get('/api/search-suggestions', async (req, res) => {
-    try {
-        const { q } = req.query;
-        
-        if (!q || q.trim() === '') {
-            return res.json({ contracts: [], sessions: [] });
-        }
-
-        const results = {
-            contracts: [],
-            sessions: []
-        };
-
-        // Быстрый поиск контрактов
-        const contracts = await pool.query(`
-            SELECT contract_id, contract_name 
-            FROM contracts 
-            WHERE contract_name ILIKE $1 OR contract_id::text ILIKE $1
-            ORDER BY contract_date DESC 
-            LIMIT 5
-        `, [`%${q}%`]);
-        
-        results.contracts = contracts.rows;
-
-        // Быстрый поиск котировок
-        const sessions = await pool.query(`
-            SELECT session_id, session_name 
-            FROM quotation_sessions 
-            WHERE session_name ILIKE $1 OR session_id::text ILIKE $1
-            ORDER BY creation_date DESC 
-            LIMIT 5
-        `, [`%${q}%`]);
-        
-        results.sessions = sessions.rows;
-
-        res.json(results);
-
-    } catch (error) {
-        console.error('Search suggestions error:', error);
-        res.json({ contracts: [], sessions: [] });
-    }
-});
 
 app.use('/src', express.static(path.join(__dirname, 'src')));
 
@@ -143,9 +103,11 @@ app.get('/api/search', async (req, res) => {
             SELECT *, 'contract' as data_type FROM contracts 
              WHERE contract_name ILIKE $1 OR customer_name ILIKE $1 OR supplier_name ILIKE $1
                 OR contract_id::text ILIKE $1 OR customer_inn ILIKE $1 OR supplier_inn ILIKE $1
+                OR contract_amount::text ILIKE $1
+                OR contract_name % $2 OR customer_name % $2 OR supplier_name % $2
              ORDER BY contract_date DESC LIMIT 50`;
         
-        const contracts = await pool.query(contractsQuery, [`%${q}%`]);
+        const contracts = await pool.query(contractsQuery, [`%${q}%`, q]);
         console.log(`Найдено контрактов: ${contracts.rows.length}`);
         results = [...results, ...contracts.rows];
 
@@ -155,9 +117,11 @@ app.get('/api/search', async (req, res) => {
             SELECT *, 'quotation_session' as data_type FROM quotation_sessions 
              WHERE session_name ILIKE $1 OR customer_name ILIKE $1 OR supplier_name ILIKE $1
                 OR session_id::text ILIKE $1 OR customer_inn ILIKE $1 OR supplier_inn ILIKE $1
+                OR session_amount::text ILIKE $1
+                OR session_name % $2 OR customer_name % $2 OR supplier_name % $2
              ORDER BY creation_date DESC LIMIT 50`;
         
-        const sessions = await pool.query(sessionsQuery, [`%${q}%`]);
+        const sessions = await pool.query(sessionsQuery, [`%${q}%`, q]);
         console.log(`Найдено сессий: ${sessions.rows.length}`);
         results = [...results, ...sessions.rows];
 
@@ -173,15 +137,14 @@ app.get('/api/search', async (req, res) => {
 // Регистрация пользователя
 app.post('/api/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, company, inn, phone, email, password } = req.body;
         
-        // Хеширование пароля
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
         
         const { rows } = await pool.query(
-            'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
-            [name, email, passwordHash]
+            'INSERT INTO users (name, company, inn, phone, email, password_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, company, inn, phone, email',
+            [name, company, inn, phone, email, passwordHash]
         );
         
         res.json({ success: true, user: rows[0] });
