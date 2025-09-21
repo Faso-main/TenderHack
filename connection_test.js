@@ -13,8 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Проверка обязательных переменных окружения
-const requiredEnvVars = ['DB_USER', 'DB_NAME', 'DB_PASSWORD'];
+const requiredEnvVars = ['DB_USER', 'DB_NAME', 'DB_PASSWORD']; // обязательные переменные
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
@@ -22,25 +21,23 @@ if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
     process.exit(1);
 }
 
-// Конфигурация PostgreSQL с улучшениями
 const poolConfig = {
     user: process.env.DB_USER || 'kb_user',
     host: process.env.DB_HOST || 'localhost',
     database: process.env.DB_NAME || 'knowledge_base',
     password: process.env.DB_PASSWORD || '1234',
     port: process.env.DB_PORT || 5432,
-    // Важные улучшения:
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 5000, // Таймаут подключения 5 секунд
-    idleTimeoutMillis: 30000, // Закрывать простаивающие соединения через 30 секунд
-    max: 20, // Максимальное количество клиентов в пуле
+    connectionTimeoutMillis: 5000, 
+    idleTimeoutMillis: 30000, 
+    max: 20, 
 };
 
 const pool = new Pool(poolConfig);
 
-// Проверка подключения при старте
+
 pool.on('connect', (client) => {
-    console.log('New client connected to PostgreSQL');
+    console.log('New client connected to PostgreSQL'); // подключения при старте
 });
 
 pool.on('error', (err, client) => {
