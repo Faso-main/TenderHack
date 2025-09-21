@@ -6,24 +6,41 @@ import bcrypt from 'bcryptjs';
 import compression from 'compression';
 import helmet from 'helmet';
 import cors from 'cors';
+import jamspell from 'jamspell';
+import { Natural } from 'natural';
+import { HfInference } from '@huggingface/inference';
 
+// Инициализация пути
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Инициализация приложения
 const app = express();
-const PORT = 3001; // Фиксированный порт
+const PORT = 3001;
 
-// Конфигурация PostgreSQL - прямые значения
+// Конфигурация PostgreSQL
 const pool = new Pool({
     user: 'kb_user',
     host: 'localhost',
     database: 'knowledge_base',
     password: '1234',
-    port: 5432, // Стандартный порт PostgreSQL
+    port: 5432,
 });
 
-// Enable pg_trgm extension
+// Инициализация расширений PostgreSQL
 pool.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;').catch(err => console.error('pg_trgm extension error:', err));
+pool.query('CREATE EXTENSION IF NOT EXISTS pgvector;').catch(err => console.error('pgvector extension error:', err));
+
+// Инициализация корректора орфографии
+const spellChecker = new jamspell.JamSpell();
+spellChecker.loadModel('/path/to/russian_model.bin'); // Укажите путь к модели jamspell для русского языка
+
+// Инициализация обработчика текста
+const tokenizer = new Natural.WordTokenizer();
+const stemmer = Natural.PorterStemmerRu;
+
+// Инициализация Hugging Face для получения векторных представлений
+const hf = new HfInference('your_huggingface_api_key'); // Замените на ваш API-ключ
 
 // Middleware
 app.use(helmet({
@@ -34,12 +51,11 @@ app.use(helmet({
             fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
             scriptSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"]
+            connectSrc: ["'self'", "https://api-inference.huggingface.co"]
         }
     },
     crossOriginEmbedderPolicy: false
 }));
-
 app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
@@ -61,8 +77,83 @@ app.use(express.static(__dirname, {
         }
     }
 }));
-
 app.use('/src', express.static(path.join(__dirname, 'src')));
+
+// Функция для получения векторного представления текста
+async function getTextEmbedding(text) {
+    try {
+        const response = await hf.featureExtraction({
+            model: 'sentence-transformers/LaBSE',
+            inputs: text
+        });
+        return response;
+    } catch (error) {
+        console.error('Ошибка получения вектора:', error);
+        return null;
+    }
+}
+
+// Рекурсивный поиск
+async function recursiveVectorSearch(query, depth = 0, maxDepth = 2, results = []) {
+    if (depth > maxDepth) return results;
+
+    // Коррекция орфографии
+    const correctedQuery = spellChecker.correct(query);
+    console.log(`Исходный запрос: ${query}, Исправленный: ${correctedQuery}`);
+
+    // Токенизация и стемминг
+    const tokens = tokenizer.tokenize(correctedQuery);
+    const stemmedTokens = tokens.map(token => stemmer.stem(token));
+    const processedQuery = stemmedTokens.join(' ');
+
+    // Получение векторного представления запроса
+    const queryEmbedding = await getTextEmbedding(processedQuery);
+    if (!queryEmbedding) {
+        console.error('Не удалось получить вектор запроса');
+        return results;
+    }
+
+    try {
+        // Поиск по контрактам
+        const contractsQuery = `
+            SELECT *, 'contract' as data_type,
+                   (1 - (embedding <=> $1::vector)) as similarity
+            FROM contracts 
+            WHERE embedding <=> $1::vector < 0.3
+            ORDER BY similarity DESC LIMIT 50`;
+        const contracts = await pool.query(contractsQuery, [JSON.stringify(queryEmbedding)]);
+        results.push(...contracts.rows);
+
+        // Поиск по котировочным сессиям
+        const sessionsQuery = `
+            SELECT *, 'quotation_session' as data_type,
+                   (1 - (embedding <=> $1::vector)) as similarity
+            FROM quotation_sessions 
+            WHERE embedding <=> $1::vector < 0.3
+            ORDER BY similarity DESC LIMIT 50`;
+        const sessions = await pool.query(sessionsQuery, [JSON.stringify(queryEmbedding)]);
+        results.push(...sessions.rows);
+
+        // Если результатов мало, разбиваем запрос на подзапросы
+        if (results.length < 5 && tokens.length > 1 && depth < maxDepth) {
+            for (const token of tokens) {
+                const subQuery = token;
+                await recursiveVectorSearch(subQuery, depth + 1, maxDepth, results);
+            }
+        }
+
+        // Удаление дубликатов
+        const uniqueResults = Array.from(new Map(results.map(item => [
+            item.data_type === 'contract' ? item.contract_id : item.session_id,
+            item
+        ])).values());
+
+        return uniqueResults;
+    } catch (error) {
+        console.error('Ошибка векторного поиска:', error);
+        return results;
+    }
+}
 
 // API endpoints
 app.get('/api/health', async (req, res) => {
@@ -97,40 +188,85 @@ app.get('/api/search', async (req, res) => {
 
         let results = [];
 
-        // Поиск по контрактам
-        console.log('Поиск по контрактам...');
-        const contractsQuery = `
+        // Векторный поиск
+        results = await recursiveVectorSearch(q);
+
+        // Дополняем традиционным поиском
+        const textQuery = `
             SELECT *, 'contract' as data_type FROM contracts 
              WHERE contract_name ILIKE $1 OR customer_name ILIKE $1 OR supplier_name ILIKE $1
                 OR contract_id::text ILIKE $1 OR customer_inn ILIKE $1 OR supplier_inn ILIKE $1
                 OR contract_amount::text ILIKE $1
                 OR contract_name % $2 OR customer_name % $2 OR supplier_name % $2
-             ORDER BY contract_date DESC LIMIT 50`;
-        
-        const contracts = await pool.query(contractsQuery, [`%${q}%`, q]);
-        console.log(`Найдено контрактов: ${contracts.rows.length}`);
-        results = [...results, ...contracts.rows];
-
-        // Поиск по котировочным сессиям
-        console.log('Поиск по котировочным сессиям...');
-        const sessionsQuery = `
+             UNION
             SELECT *, 'quotation_session' as data_type FROM quotation_sessions 
              WHERE session_name ILIKE $1 OR customer_name ILIKE $1 OR supplier_name ILIKE $1
                 OR session_id::text ILIKE $1 OR customer_inn ILIKE $1 OR supplier_inn ILIKE $1
                 OR session_amount::text ILIKE $1
                 OR session_name % $2 OR customer_name % $2 OR supplier_name % $2
-             ORDER BY creation_date DESC LIMIT 50`;
+             ORDER BY contract_date DESC LIMIT 100`;
         
-        const sessions = await pool.query(sessionsQuery, [`%${q}%`, q]);
-        console.log(`Найдено сессий: ${sessions.rows.length}`);
-        results = [...results, ...sessions.rows];
+        const textResults = await pool.query(textQuery, [`%${q}%`, q]);
+        results.push(...textResults.rows);
 
-        console.log(`Всего результатов: ${results.length}`);
-        res.json(results.slice(0, 100));
+        // Удаление дубликатов
+        const uniqueResults = Array.from(new Map(results.map(item => [
+            item.data_type === 'contract' ? item.contract_id : item.session_id,
+            item
+        ])).values());
+
+        console.log(`Всего результатов: ${uniqueResults.length}`);
+        res.json(uniqueResults.slice(0, 100));
 
     } catch (error) {
         console.error('Ошибка поиска:', error);
         res.status(500).json({ error: 'Search failed', details: error.message });
+    }
+});
+
+// Подсказки для поиска
+app.get('/api/suggestions', async (req, res) => {
+    try {
+        const { q } = req.query;
+        
+        if (!q || q.trim() === '') {
+            return res.json([]);
+        }
+
+        const correctedQuery = spellChecker.correct(q);
+        const tokens = tokenizer.tokenize(correctedQuery);
+        const stemmedTokens = tokens.map(token => stemmer.stem(token));
+        const processedQuery = stemmedTokens.join(' ');
+
+        const queryEmbedding = await getTextEmbedding(processedQuery);
+        if (!queryEmbedding) {
+            return res.json([]);
+        }
+
+        let results = [];
+
+        const contractsQuery = `
+            SELECT *, 'contract' as data_type,
+                   (1 - (embedding <=> $1::vector)) as similarity
+            FROM contracts 
+            WHERE embedding <=> $1::vector < 0.3
+            ORDER BY similarity DESC LIMIT 5`;
+        const contracts = await pool.query(contractsQuery, [JSON.stringify(queryEmbedding)]);
+        results.push(...contracts.rows);
+
+        const sessionsQuery = `
+            SELECT *, 'quotation_session' as data_type,
+                   (1 - (embedding <=> $1::vector)) as similarity
+            FROM quotation_sessions 
+            WHERE embedding <=> $1::vector < 0.3
+            ORDER BY similarity DESC LIMIT 5`;
+        const sessions = await pool.query(sessionsQuery, [JSON.stringify(queryEmbedding)]);
+        results.push(...sessions.rows);
+
+        res.json(results);
+    } catch (error) {
+        console.error('Ошибка подсказок:', error);
+        res.status(500).json({ error: 'Suggestions failed', details: error.message });
     }
 });
 
@@ -149,7 +285,7 @@ app.post('/api/register', async (req, res) => {
         
         res.json({ success: true, user: rows[0] });
     } catch (error) {
-        if (error.code === '23505') { // duplicate key
+        if (error.code === '23505') {
             res.status(400).json({ error: 'User already exists' });
         } else {
             res.status(500).json({ error: 'Registration failed' });
@@ -178,10 +314,8 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        // Убираем пароль из ответа
         const { password_hash, ...userWithoutPassword } = user;
         res.json({ success: true, user: userWithoutPassword });
-        
     } catch (error) {
         res.status(500).json({ error: 'Login failed' });
     }
@@ -213,6 +347,7 @@ process.on('SIGINT', () => {
     console.log('Received SIGINT. Shutting down gracefully...');
     server.close(() => {
         console.log('Server closed');
+        pool.end();
         process.exit(0);
     });
 });
@@ -221,6 +356,7 @@ process.on('SIGTERM', () => {
     console.log('Received SIGTERM. Shutting down gracefully...');
     server.close(() => {
         console.log('Server closed');
+        pool.end();
         process.exit(0);
     });
 });
