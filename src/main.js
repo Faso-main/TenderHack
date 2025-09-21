@@ -112,7 +112,7 @@ class KnowledgeBaseApp {
             </div>
         `;
     }
-    
+
     checkAuth() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     const userIcon = document.getElementById('userIcon');
@@ -426,90 +426,87 @@ class KnowledgeBaseApp {
         });
     }
 
-    showResultDetails(item) {
-        const isContract = item.data_type === 'contract';
-        const modal = document.createElement('div');
-        modal.className = 'result-modal';
-        
-        const amount = parseFloat(isContract ? item.contract_amount : item.session_amount);
-        const date = new Date(isContract ? item.contract_date : item.creation_date);
-        
-        modal.innerHTML = `
-            <div class="modal-backdrop"></div>
-            <div class="modal-container">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>${isContract ? item.contract_name : item.session_name}</h2>
-                        <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
-                        <button class="modal-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Тип:</strong> ${isContract ? 'Контракт' : 'Котировочная сессия'}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Заказчик:</strong> ${item.customer_name}
-                            </div>
-                            <div class="detail-item">
-                                <strong>ИНН заказчика:</strong> ${item.customer_inn}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Поставщик:</strong> ${item.supplier_name}
-                            </div>
-                            <div class="detail-item">
-                                <strong>ИНН поставщика:</strong> ${item.supplier_inn}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.
-                            </div>
-                            <div class="detail-item">
-                                <strong>Дата ${isContract ? 'заключения' : 'создания'}:</strong> ${date.toLocaleDateString('ru-RU')}
-                            </div>
-                            ${isContract ? '' : `
-                                <div class="detail-item">
-                                    <strong>Дата завершения:</strong> ${new Date(item.completion_date).toLocaleDateString('ru-RU')}
-                                </div>
-                            `}
-                            <div class="detail-item">
-                                <strong>Правовое основание:</strong> ${item.law_basis}
-                            </div>
-                            ${item.category ? `
-                                <div class="detail-item">
-                                    <strong>Категория:</strong> ${item.category}
-                                </div>
-                            ` : ''}
+    // В методе showResultDetails замените весь HTML модального окна:
+showResultDetails(item) {
+    const isContract = item.data_type === 'contract';
+    const modal = document.createElement('div');
+    modal.className = 'result-modal';
+    
+    const amount = parseFloat(isContract ? item.contract_amount : item.session_amount);
+    const date = new Date(isContract ? item.contract_date : item.creation_date);
+    
+    modal.innerHTML = `
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>${isContract ? item.contract_name : item.session_name}</h2>
+                    <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn-secondary">Закрыть</button>
+                        <div class="detail-item">
+                            <strong>Тип:</strong> ${isContract ? 'Контракт' : 'Котировочная сессия'}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Заказчик:</strong> ${item.customer_name}
+                        </div>
+                        <div class="detail-item">
+                            <strong>ИНН заказчика:</strong> ${item.customer_inn}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Поставщик:</strong> ${item.supplier_name}
+                        </div>
+                        <div class="detail-item">
+                            <strong>ИНН поставщика:</strong> ${item.supplier_inn}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.
+                        </div>
+                        <div class="detail-item">
+                            <strong>Дата ${isContract ? 'заключения' : 'создания'}:</strong> ${date.toLocaleDateString('ru-RU')}
+                        </div>
+                        ${isContract ? '' : `
+                            <div class="detail-item">
+                                <strong>Дата завершения:</strong> ${new Date(item.completion_date).toLocaleDateString('ru-RU')}
+                            </div>
+                        `}
+                        <div class="detail-item">
+                            <strong>Правовое основание:</strong> ${item.law_basis}
+                        </div>
+                        ${item.category ? `
+                            <div class="detail-item">
+                                <strong>Категория:</strong> ${item.category}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+    
+    const closeModal = () => {
+        modal.classList.remove('active');
         setTimeout(() => {
-            modal.classList.add('active');
-        }, 10);
-        
-        const closeModal = () => {
-            modal.classList.remove('active');
-            setTimeout(() => {
-                if (modal.parentNode) {
-                    document.body.removeChild(modal);
-                }
-            }, 300);
-        };
-        
-        modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
-        modal.querySelector('.modal-close').addEventListener('click', closeModal);
-        modal.querySelector('.btn-secondary').addEventListener('click', closeModal);
-    }
+            if (modal.parentNode) {
+                document.body.removeChild(modal);
+            }
+        }, 300);
+    };
+    
+    modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+    modal.querySelector('.modal-close').addEventListener('click', closeModal);
+}
 
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');

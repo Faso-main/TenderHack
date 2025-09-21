@@ -1,7 +1,7 @@
 :root {
-  --primary: #8e24a9;
-  --primary-dark: #af36bc;
-  --primary-light: #4a1689;
+  --primary: #711a87;
+  --primary-dark: #8d36bc;
+  --primary-light: #651689;
   --accent: #8b5cf6;
   --background: #ffffff;
   --surface: #f8fafc;
@@ -75,8 +75,8 @@ body {
 }
 
 .user-icon.authenticated {
-    background: var(--success); /* Зеленый фон вместо белого */
-    border-color: #34d399;
+  background: var(--success);
+  border-color: #34d399;
 }
 
 .user-icon i {
@@ -85,7 +85,7 @@ body {
 }
 
 .user-icon.authenticated i {
-    color: white; /* Белая иконка на зеленом фоне */
+  color: white;
 }
 
 /* Main Content */
@@ -458,62 +458,84 @@ body {
   transition: opacity 0.3s ease;
 }
 
+.result-modal ::-webkit-scrollbar {
+    width: 3px;
+}
+
+.result-modal ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.result-modal ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
 .result-modal.active {
   opacity: 1;
   pointer-events: all;
 }
 
 .result-modal .modal-container {
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh; /* Повыше модальное окно */
+    height: auto;
 }
 
 .result-modal .modal-content {
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
 }
 
+
 .modal-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .modal-header h2 {
-  color: var(--text-primary);
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem; /* Меньший шрифт */
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
 }
 
 .modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--text-secondary);
-  padding: 0;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.3s ease;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+    flex-shrink: 0;
 }
 
 .modal-close:hover {
-  color: var(--text-primary);
+    color: var(--text-primary);
 }
 
 .modal-body {
-  padding: 2rem;
-  overflow-y: auto;
-  flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
 }
+
 
 .modal-body p {
   line-height: 1.6;
@@ -559,6 +581,23 @@ body {
   transition: transform 0.3s ease;
   border-left: 4px solid var(--primary);
   z-index: 4000;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.8rem; 
+}
+
+.detail-item {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.detail-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .notification.show {
@@ -608,49 +647,148 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .header {
-    padding: 0.75rem;
-  }
-  
-  .user-icon {
-    width: 3rem;
-    height: 3rem;
-  }
-  
-  .main-content {
-    padding: 1rem;
-    margin-top: 3.5rem;
-  }
-  
-  .search-container {
-    padding: 2rem 1.5rem;
-    border-radius: 1rem;
-  }
-  
-  .search-box {
-    grid-template-columns: 1fr;
-  }
-  
-  #searchButton span {
-    display: none;
-  }
-  
-  .result-item {
-    grid-template-columns: auto 1fr;
-    gap: 0.75rem;
-  }
-  
-  .result-arrow {
-    display: none;
-  }
-  
-  .modal-content {
-    padding: 2rem 1.5rem;
-  }
-  
-  .input-group input {
-    padding: 0.875rem 0.875rem 0.875rem 2.5rem;
-  }
+    .header {
+        padding: 1rem;
+    }
+    
+    .user-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .main-content {
+        padding: 1rem;
+        margin-top: 4rem;
+    }
+    
+    .search-container {
+        padding: 1.5rem;
+        border-radius: 1rem;
+    }
+    
+    .search-box {
+        grid-template-columns: 1fr;
+    }
+    
+    #searchButton span {
+        display: none;
+    }
+    
+    .search-suggestions {
+        max-height: 200px;
+    }
+    
+    .suggestion-item {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .suggestion-category {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .result-modal .modal-container {
+        width: 95%;
+        max-height: 90vh;
+        margin: 1rem;
+    }
+    
+    .modal-header {
+        padding: 1rem 1.5rem;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .detail-item {
+        font-size: 0.85rem;
+    }
+    
+    .result-item {
+        grid-template-columns: auto 1fr;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    
+    .result-arrow {
+        display: none;
+    }
+    
+    .result-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1rem;
+    }
+    
+    .result-content h3 {
+        font-size: 1.1rem;
+    }
+    
+    .result-content p {
+        font-size: 0.85rem;
+    }
+    
+    .modal-content {
+        padding: 1.5rem;
+    }
+    
+    .input-group input {
+        padding: 0.875rem 0.875rem 0.875rem 2.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .auth-form h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-primary {
+        font-size: 1rem;
+        padding: 0.875rem;
+    }
+    
+    .notification {
+        right: 0.5rem;
+        left: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .search-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+        font-size: 0.9rem;
+    }
+    
+    #searchInput {
+        font-size: 1rem;
+        padding: 1rem;
+    }
+    
+    .stats {
+        font-size: 0.9rem;
+    }
+    
+    .no-results h3 {
+        font-size: 1.3rem;
+    }
+    
+    .no-results p {
+        font-size: 0.9rem;
+    }
+    
+    .data-type-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -770,21 +908,4 @@ body {
 
 .modal-results .result-item:last-child {
     margin-bottom: 0;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .search-suggestions {
-        max-height: 200px;
-    }
-    
-    .results-modal .modal-container {
-        width: 95%;
-        margin: 1rem;
-    }
-    
-    .suggestion-item {
-        padding: 0.5rem;
-        font-size: 0.9rem;
-    }
 }
