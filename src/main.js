@@ -127,54 +127,6 @@ class KnowledgeBaseApp {
                         </div>
                     </div>
                 </div>
-
-                <div id="tenderModal" class="modal">
-                    <div class="modal-backdrop"></div>
-                    <div class="modal-container">
-                        <div class="modal-content">
-                            <h2>Создать тендер</h2>
-                            <form id="tenderForm" class="auth-form">
-                                <div class="input-group">
-                                    <i class="fas fa-file-alt"></i>
-                                    <input type="text" id="tenderName" placeholder="Название тендера" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-user"></i>
-                                    <input type="text" id="customerName" placeholder="Имя заказчика" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-id-card"></i>
-                                    <input type="text" id="customerInn" placeholder="ИНН заказчика" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-user"></i>
-                                    <input type="text" id="supplierName" placeholder="Имя поставщика" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-id-card"></i>
-                                    <input type="text" id="supplierInn" placeholder="ИНН поставщика" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-ruble-sign"></i>
-                                    <input type="number" id="tenderAmount" placeholder="Сумма" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-calendar"></i>
-                                    <input type="date" id="completionDate" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-gavel"></i>
-                                    <input type="text" id="lawBasis" placeholder="Правовое основание" required>
-                                </div>
-                                <div class="input-group">
-                                    <i class="fas fa-tag"></i>
-                                    <input type="text" id="category" placeholder="Категория">
-                                </div>
-                                <button type="submit" class="btn-primary">Создать</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
             </div>
         `;
     }
@@ -199,10 +151,8 @@ class KnowledgeBaseApp {
         const authModal = document.getElementById('authModal');
         const resultsModal = document.getElementById('resultsModal');
         const profileModal = document.getElementById('profileModal');
-        const tenderModal = document.getElementById('tenderModal');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
-        const tenderForm = document.getElementById('tenderForm');
         const showRegister = document.getElementById('showRegister');
         const showLogin = document.getElementById('showLogin');
         const searchInput = document.getElementById('searchInput');
@@ -220,7 +170,7 @@ class KnowledgeBaseApp {
             }
         });
 
-        [authModal, resultsModal, profileModal, tenderModal].forEach(modal => {
+        [authModal, resultsModal, profileModal].forEach(modal => {
             modal.querySelector('.modal-backdrop').addEventListener('click', () => {
                 this.closeModal(modal);
             });
@@ -250,11 +200,6 @@ class KnowledgeBaseApp {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleLogin();
-        });
-
-        tenderForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleCreateTender();
         });
 
         searchButton.addEventListener('click', () => {
@@ -335,19 +280,9 @@ class KnowledgeBaseApp {
                 </div>
             </div>
             <div class="profile-actions">
-                <button class="btn-primary" id="createTenderBtn">Создать тендер</button>
                 <button class="btn-primary" id="logoutBtn">Выйти</button>
             </div>
         `;
-
-        document.getElementById('createTenderBtn').addEventListener('click', () => {
-            this.closeModal(profileModal);
-            const tenderModal = document.getElementById('tenderModal');
-            tenderModal.style.display = 'block';
-            setTimeout(() => {
-                tenderModal.classList.add('active');
-            }, 10);
-        });
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('currentUser');
@@ -420,43 +355,6 @@ class KnowledgeBaseApp {
             }
         } catch (error) {
             this.showNotification('Ошибка соединения с сервером', 'error');
-        }
-    }
-
-    async handleCreateTender() {
-        const data = {
-            session_name: document.getElementById('tenderName').value,
-            customer_name: document.getElementById('customerName').value,
-            customer_inn: document.getElementById('customerInn').value,
-            supplier_name: document.getElementById('supplierName').value,
-            supplier_inn: document.getElementById('supplierInn').value,
-            session_amount: document.getElementById('tenderAmount').value,
-            creation_date: new Date().toISOString().split('T')[0],
-            completion_date: document.getElementById('completionDate').value,
-            law_basis: document.getElementById('lawBasis').value,
-            category: document.getElementById('category').value
-        };
-
-        try {
-            const response = await fetch('/api/create_quotation_session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showNotification('Тендер создан успешно!', 'success');
-                this.closeModal(document.getElementById('tenderModal'));
-                document.getElementById('tenderForm').reset();
-            } else {
-                this.showNotification(result.error, 'error');
-            }
-        } catch (error) {
-            this.showNotification('Ошибка создания тендера', 'error');
         }
     }
 
