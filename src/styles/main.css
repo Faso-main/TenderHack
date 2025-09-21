@@ -1,7 +1,7 @@
 :root {
-  --primary: #d369ed;
-  --primary-dark: #8d36bc;
-  --primary-light: #540877;
+  --primary: #8e24a9;
+  --primary-dark: #af36bc;
+  --primary-light: #4a1689;
   --accent: #8b5cf6;
   --background: #ffffff;
   --surface: #f8fafc;
@@ -75,8 +75,8 @@ body {
 }
 
 .user-icon.authenticated {
-  background: var(--success);
-  border-color: #34d399;
+    background: var(--success); /* Зеленый фон вместо белого */
+    border-color: #34d399;
 }
 
 .user-icon i {
@@ -85,7 +85,7 @@ body {
 }
 
 .user-icon.authenticated i {
-  color: white;
+    color: white; /* Белая иконка на зеленом фоне */
 }
 
 /* Main Content */

@@ -112,6 +112,22 @@ class KnowledgeBaseApp {
             </div>
         `;
     }
+    
+    checkAuth() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const userIcon = document.getElementById('userIcon');
+    
+    if (currentUser) {
+        userIcon.innerHTML = `<i class="fas fa-user-check"></i>`;  // ← Эту строку нужно изменить
+        userIcon.title = `${currentUser.name}`;
+        userIcon.classList.add('authenticated');
+    } else {
+        userIcon.innerHTML = `<i class="fas fa-user"></i>`;
+        userIcon.title = 'Личный кабинет';
+        userIcon.classList.remove('authenticated');
+    }
+}
+
 
     setupEventListeners() {
         const userIcon = document.getElementById('userIcon');
