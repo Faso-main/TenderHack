@@ -48,6 +48,7 @@ class KnowledgeBaseApp {
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h2>Результаты поиска</h2>
+                                <button class="modal-close">&times;</button>
                                 <div class="search-query">По запросу: <span id="modalQuery"></span></div>
                             </div>
                             <div class="modal-body">
@@ -157,7 +158,7 @@ class KnowledgeBaseApp {
         const showLogin = document.getElementById('showLogin');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
-
+        
         userIcon.addEventListener('click', () => {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (currentUser) {
@@ -191,7 +192,8 @@ class KnowledgeBaseApp {
                 loginForm.classList.add('active');
             });
         }
-
+        resultsModal.querySelector('.modal-close').addEventListener('click', () => {
+    this.closeModal(resultsModal);});
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleRegister();
@@ -238,64 +240,123 @@ class KnowledgeBaseApp {
     }
 
     showProfileModal(user) {
-        const profileModal = document.getElementById('profileModal');
-        const profileContent = document.getElementById('profileContent');
+    const profileModal = document.getElementById('profileModal');
+    const profileContent = document.getElementById('profileContent');
+    
+    profileContent.innerHTML = `
+        <div class="modal-header">
+            <h2>Личный кабинет</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="profile-info">
+            <div class="profile-item">
+                <i class="fas fa-user"></i>
+                <div>
+                    <strong>ФИО:</strong>
+                    <span>${user.name}</span>
+                </div>
+            </div>
+            <div class="profile-item">
+                <i class="fas fa-building"></i>
+                <div>
+                    <strong>Компания:</strong>
+                    <span>${user.company || 'Не указано'}</span>
+                </div>
+            </div>
+            <div class="profile-item">
+                <i class="fas fa-id-card"></i>
+                <div>
+                    <strong>ИНН:</strong>
+                    <span>${user.inn || 'Не указано'}</span>
+                </div>
+            </div>
+            <div class="profile-item">
+                <i class="fas fa-phone"></i>
+                <div>
+                    <strong>Телефон:</strong>
+                    <span>${user.phone || 'Не указано'}</span>
+                </div>
+            </div>
+            <div class="profile-item">
+                <i class="fas fa-envelope"></i>
+                <div>
+                    <strong>Email:</strong>
+                    <span>${user.email}</span>
+                </div>
+            </div>
+        </div>
         
-        profileContent.innerHTML = `
-            <div class="profile-info">
-                <div class="profile-item">
-                    <i class="fas fa-user"></i>
-                    <div>
-                        <strong>ФИО:</strong>
-                        <span>${user.name}</span>
-                    </div>
-                </div>
-                <div class="profile-item">
-                    <i class="fas fa-building"></i>
-                    <div>
-                        <strong>Компания:</strong>
-                        <span>${user.company || 'Не указано'}</span>
-                    </div>
-                </div>
-                <div class="profile-item">
-                    <i class="fas fa-id-card"></i>
-                    <div>
-                        <strong>ИНН:</strong>
-                        <span>${user.inn || 'Не указано'}</span>
-                    </div>
-                </div>
-                <div class="profile-item">
-                    <i class="fas fa-phone"></i>
-                    <div>
-                        <strong>Телефон:</strong>
-                        <span>${user.phone || 'Не указано'}</span>
-                    </div>
-                </div>
-                <div class="profile-item">
-                    <i class="fas fa-envelope"></i>
-                    <div>
-                        <strong>Email:</strong>
-                        <span>${user.email}</span>
-                    </div>
-                </div>
+        <div class="profile-actions">
+            <button class="btn-primary" id="createTenderBtn">
+                <i class="fas fa-plus"></i>
+                Создать тендер
+            </button>
+            <button class="btn-secondary" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                Выйти
+            </button>
+        </div>
+        
+        <div id="createTenderForm" class="create-tender-form" style="display: none;">
+            <h3>Создание нового тендера</h3>
+            <div class="input-group">
+                <i class="fas fa-heading"></i>
+                <input type="text" id="tenderName" placeholder="Название тендера" required>
             </div>
-            <div class="profile-actions">
-                <button class="btn-primary" id="logoutBtn">Выйти</button>
+            <div class="input-group">
+                <i class="fas fa-ruble-sign"></i>
+                <input type="number" id="tenderAmount" placeholder="Сумма" required step="0.01">
             </div>
-        `;
+            <div class="input-group">
+                <i class="fas fa-calendar"></i>
+                <input type="date" id="tenderDate" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-balance-scale"></i>
+                <input type="text" id="tenderLawBasis" placeholder="Правовое основание" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-tag"></i>
+                <input type="text" id="tenderCategory" placeholder="Категория" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="cancelTender">Отмена</button>
+                <button type="button" class="btn-primary" id="submitTender">Создать</button>
+            </div>
+        </div>
+    `;
 
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('currentUser');
-            this.closeModal(profileModal);
-            this.checkAuth();
-            this.showNotification('Вы вышли из системы', 'success');
-        });
+    // Обработчик закрытия через крестик
+    profileContent.querySelector('.modal-close').addEventListener('click', () => {
+        this.closeModal(profileModal);
+    });
 
-        profileModal.style.display = 'block';
-        setTimeout(() => {
-            profileModal.classList.add('active');
-        }, 10);
-    }
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        this.closeModal(profileModal);
+        this.checkAuth();
+        this.showNotification('Вы вышли из системы', 'success');
+    });
+
+    document.getElementById('createTenderBtn').addEventListener('click', () => {
+        document.getElementById('createTenderForm').style.display = 'block';
+        document.getElementById('createTenderBtn').style.display = 'none';
+    });
+
+    document.getElementById('cancelTender').addEventListener('click', () => {
+        document.getElementById('createTenderForm').style.display = 'none';
+        document.getElementById('createTenderBtn').style.display = 'block';
+    });
+
+    document.getElementById('submitTender').addEventListener('click', () => {
+        this.createTender();
+    });
+
+    profileModal.style.display = 'block';
+    setTimeout(() => {
+        profileModal.classList.add('active');
+    }, 10);
+}
 
     async handleRegister() {
         const name = document.getElementById('registerName').value;
@@ -552,84 +613,86 @@ class KnowledgeBaseApp {
         });
     }
 
-    showResultDetails(item) {
-        const isContract = item.data_type === 'contract';
-        const modal = document.createElement('div');
-        modal.className = 'result-modal';
-        
-        const amount = parseFloat(isContract ? item.contract_amount : item.session_amount);
-        const date = new Date(isContract ? item.contract_date : item.creation_date);
-        
-        modal.innerHTML = `
-            <div class="modal-backdrop"></div>
-            <div class="modal-container">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>${isContract ? item.contract_name : item.session_name}</h2>
-                        <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
-                    </div>
-                    <div class="modal-body">
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Тип:</strong> ${isContract ? 'Контракт' : 'Котировочная сессия'}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Заказчик:</strong> ${item.customer_name}
-                            </div>
-                            <div class="detail-item">
-                                <strong>ИНН заказчика:</strong> ${item.customer_inn}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Поставщик:</strong> ${item.supplier_name}
-                            </div>
-                            <div class="detail-item">
-                                <strong>ИНН поставщика:</strong> ${item.supplier_inn}
-                            </div>
-                            <div class="detail-item">
-                                <strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.
-                            </div>
-                            <div class="detail-item">
-                                <strong>Дата ${isContract ? 'заключения' : 'создания'}:</strong> ${date.toLocaleDateString('ru-RU')}
-                            </div>
-                            ${isContract ? '' : `
-                                <div class="detail-item">
-                                    <strong>Дата завершения:</strong> ${new Date(item.completion_date).toLocaleDateString('ru-RU')}
-                                </div>
-                            `}
-                            <div class="detail-item">
-                                <strong>Правовое основание:</strong> ${item.law_basis}
-                            </div>
-                            ${item.category ? `
-                                <div class="detail-item">
-                                    <strong>Категория:</strong> ${item.category}
-                                </div>
-                            ` : ''}
+showResultDetails(item) {
+    const isContract = item.data_type === 'contract';
+    const modal = document.createElement('div');
+    modal.className = 'result-modal';
+    
+    const amount = parseFloat(isContract ? item.contract_amount : item.session_amount);
+    const date = new Date(isContract ? item.contract_date : item.creation_date);
+    
+    modal.innerHTML = `
+        <div class="modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>${isContract ? item.contract_name : item.session_name}</h2>
+                    <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <strong>ID:</strong> ${isContract ? item.contract_id : item.session_id}
                         </div>
+                        <div class="detail-item">
+                            <strong>Тип:</strong> ${isContract ? 'Контракт' : 'Котировочная сессия'}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Заказчик:</strong> ${item.customer_name}
+                        </div>
+                        <div class="detail-item">
+                            <strong>ИНН заказчика:</strong> ${item.customer_inn}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Поставщик:</strong> ${item.supplier_name}
+                        </div>
+                        <div class="detail-item">
+                            <strong>ИНН поставщика:</strong> ${item.supplier_inn}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Сумма:</strong> ${amount.toLocaleString('ru-RU')} руб.
+                        </div>
+                        <div class="detail-item">
+                            <strong>Дата ${isContract ? 'заключения' : 'создания'}:</strong> ${date.toLocaleDateString('ru-RU')}
+                        </div>
+                        ${isContract ? '' : `
+                            <div class="detail-item">
+                                <strong>Дата завершения:</strong> ${new Date(item.completion_date).toLocaleDateString('ru-RU')}
+                            </div>
+                        `}
+                        <div class="detail-item">
+                            <strong>Правовое основание:</strong> ${item.law_basis}
+                        </div>
+                        ${item.category ? `
+                            <div class="detail-item">
+                                <strong>Категория:</strong> ${item.category}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+    
+    const closeModal = () => {
+        modal.classList.remove('active');
         setTimeout(() => {
-            modal.classList.add('active');
-        }, 10);
-        
-        const closeModal = () => {
-            modal.classList.remove('active');
-            setTimeout(() => {
-                if (modal.parentNode) {
-                    document.body.removeChild(modal);
-                }
-            }, 300);
-        };
-        
-        modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
-    }
+            if (modal.parentNode) {
+                document.body.removeChild(modal);
+            }
+        }, 300);
+    };
+    
+    modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+    modal.querySelector('.modal-close').addEventListener('click', closeModal);
+}
 
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');

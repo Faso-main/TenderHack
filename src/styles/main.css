@@ -515,23 +515,56 @@ body {
 
 
 .modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--text-secondary);
-    padding: 0;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
     width: 2rem;
     height: 2rem;
+    border: none;
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.3s ease;
-    flex-shrink: 0;
+    z-index: 10;
 }
 
 .modal-close:hover {
+    background: var(--primary);
+    color: white;
+    transform: rotate(90deg);
+}
+
+.result-modal .modal-close {
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
+}
+
+.profile-modal .modal-header {
+    position: relative;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.profile-modal .modal-header h2 {
+    margin: 0;
     color: var(--text-primary);
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.profile-modal .modal-close {
+    top: 1rem;
+    right: 1rem;
 }
 
 .modal-body {
@@ -1090,4 +1123,49 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+@media (max-width: 768px) {
+    .modal-close {
+        width: 1.8rem;
+        height: 1.8rem;
+        font-size: 1rem;
+        top: 0.8rem;
+        right: 0.8rem;
+    }
+    
+    .result-modal .modal-close {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1.2rem;
+        top: 1rem;
+        right: 1rem;
+    }
+    
+    .profile-modal .modal-header {
+        padding: 1rem;
+    }
+    
+    .profile-modal .modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .profile-modal .modal-close {
+        top: 0.8rem;
+        right: 0.8rem;
+    }
+}
+
+/* Убедимся, что заголовок не перекрывается крестиком */
+.modal-header {
+    position: relative;
+    padding-right: 3rem;
+}
+
+.profile-modal .modal-header {
+    padding-right: 3rem;
+}
+
+.result-modal .modal-header {
+    padding: 1.5rem 3rem 1.5rem 1.5rem;
 }
