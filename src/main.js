@@ -151,12 +151,16 @@ class KnowledgeBaseApp {
         const authModal = document.getElementById('authModal');
         const resultsModal = document.getElementById('resultsModal');
         const profileModal = document.getElementById('profileModal');
+        const createContractModal = document.getElementById('createContractModal');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
         const showRegister = document.getElementById('showRegister');
         const showLogin = document.getElementById('showLogin');
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
+        const createContractButton = document.getElementById('createContractButton');
+        const createContractForm = document.getElementById('createContractForm');
+        const cancelCreateContract = document.getElementById('cancelCreateContract');
 
         userIcon.addEventListener('click', () => {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -170,7 +174,7 @@ class KnowledgeBaseApp {
             }
         });
 
-        [authModal, resultsModal, profileModal].forEach(modal => {
+        [authModal, resultsModal, profileModal, createContractModal].forEach(modal => {
             modal.querySelector('.modal-backdrop').addEventListener('click', () => {
                 this.closeModal(modal);
             });
@@ -210,6 +214,19 @@ class KnowledgeBaseApp {
             if (e.key === 'Enter') {
                 this.showSearchResults();
             }
+        });
+
+        createContractButton.addEventListener('click', () => {
+            this.showCreateContractModal();
+        });
+
+        createContractForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleCreateContract();
+        });
+
+        cancelCreateContract.addEventListener('click', () => {
+            this.closeModal(createContractModal);
         });
 
         let searchTimeout;
@@ -294,6 +311,68 @@ class KnowledgeBaseApp {
         profileModal.style.display = 'block';
         setTimeout(() => {
             profileModal.classList.add('active');
+        }, 10);
+    }
+    async handleCreateContract() {
+        const contractData = {
+            contract_name: document.getElementById('contractName').value,
+            contract_amount: document.getElementById('contractAmount').value,
+            customer_name: document.getElementById('customerName').value,
+            customer_inn: document.getElementById('customerInn').value,
+            supplier_name: document.getElementById('supplierName').value,
+            supplier_inn: document.getElementById('supplierInn').value,
+            contract_date: document.getElementById('contractDate').value,
+            law_basis: document.getElementById('lawBasis').value,
+            category: document.getElementById('contractCategory').value
+        };
+
+        try {
+            const response = await fetch('/api/contracts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(contractData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Контракт успешно создан!', 'success');
+                this.closeModal(document.getElementById('createContractModal'));
+                document.getElementById('createContractForm').reset();
+                
+                // Обновляем результаты поиска, если модальное окно с результатами открыто
+                if (document.getElementById('resultsModal').style.display === 'block') {
+                    this.showSearchResults();
+                }
+            } else {
+                this.showNotification(data.error || 'Ошибка при создании контракта', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Ошибка соединения с сервером', 'error');
+        }
+    }
+    showCreateContractModal() {
+        const createContractModal = document.getElementById('createContractModal');
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        
+        if (!currentUser) {
+            this.showNotification('Для создания контракта необходимо войти в систему', 'warning');
+            document.getElementById('authModal').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('authModal').classList.add('active');
+            }, 10);
+            return;
+        }
+
+        // Установка текущей даты по умолчанию
+        document.getElementById('contractDate').value = new Date().toISOString().split('T')[0];
+        
+        createContractModal.style.display = 'block';
+        setTimeout(() => {
+            createContractModal.classList.add('active');
         }, 10);
     }
 
