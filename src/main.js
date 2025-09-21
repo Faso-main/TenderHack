@@ -625,11 +625,6 @@ showResultDetails(item) {
         <div class="modal-backdrop"></div>
         <div class="modal-container">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h2>${isContract ? item.contract_name : item.session_name}</h2>
-                    <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
-                    <button class="modal-close">&times;</button>
-                </div>
                 <div class="modal-body">
                     <div class="detail-grid">
                         <div class="detail-item">
