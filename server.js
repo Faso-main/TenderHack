@@ -11,18 +11,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3001; // Фиксированный порт
+const PORT = 3001;
 
-// Конфигурация PostgreSQL - прямые значения
 const pool = new Pool({
     user: 'kb_user',
     host: 'localhost',
     database: 'knowledge_base',
     password: '1234',
-    port: 5432, // Стандартный порт PostgreSQL
+    port: 5432,
 });
 
-// Middleware
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -42,7 +40,6 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Обслуживание статических файлов
 app.use(express.static(__dirname, {
     maxAge: '1y',
     etag: true,
@@ -61,7 +58,6 @@ app.use(express.static(__dirname, {
 
 app.use('/src', express.static(path.join(__dirname, 'src')));
 
-// API endpoints
 app.get('/api/health', async (req, res) => {
     try {
         await pool.query('SELECT 1');
@@ -71,7 +67,6 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// Поиск по контрактам и котировочным сессиям
 app.get('/api/search', async (req, res) => {
     console.log('Поисковый запрос:', req.query.q);
     
@@ -83,7 +78,6 @@ app.get('/api/search', async (req, res) => {
             return res.json([]);
         }
 
-        // Проверим подключение к БД
         try {
             await pool.query('SELECT 1');
             console.log('Подключение к БД активно');
@@ -94,7 +88,6 @@ app.get('/api/search', async (req, res) => {
 
         let results = [];
 
-        // Поиск по контрактам
         console.log('Поиск по контрактам...');
         const contractsQuery = `
             SELECT *, 'contract' as data_type FROM contracts 
@@ -106,7 +99,6 @@ app.get('/api/search', async (req, res) => {
         console.log(`Найдено контрактов: ${contracts.rows.length}`);
         results = [...results, ...contracts.rows];
 
-        // Поиск по котировочным сессиям
         console.log('Поиск по котировочным сессиям...');
         const sessionsQuery = `
             SELECT *, 'quotation_session' as data_type FROM quotation_sessions 
@@ -127,23 +119,21 @@ app.get('/api/search', async (req, res) => {
     }
 });
 
-// Регистрация пользователя
 app.post('/api/register', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, company, inn, phone, email, password } = req.body;
         
-        // Хеширование пароля
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
         
         const { rows } = await pool.query(
-            'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
-            [name, email, passwordHash]
+            'INSERT INTO users (name, company, inn, phone, email, password_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, company, inn, phone, email',
+            [name, company, inn, phone, email, passwordHash]
         );
         
         res.json({ success: true, user: rows[0] });
     } catch (error) {
-        if (error.code === '23505') { // duplicate key
+        if (error.code === '23505') {
             res.status(400).json({ error: 'User already exists' });
         } else {
             res.status(500).json({ error: 'Registration failed' });
@@ -151,7 +141,6 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Авторизация пользователя
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -172,7 +161,6 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        // Убираем пароль из ответа
         const { password_hash, ...userWithoutPassword } = user;
         res.json({ success: true, user: userWithoutPassword });
         
@@ -181,13 +169,27 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Serve index.html for all routes (SPA support)
+app.post('/api/create_quotation_session', async (req, res) => {
+    try {
+        const { session_name, customer_name, customer_inn, supplier_name, supplier_inn, session_amount, creation_date, completion_date, law_basis, category } = req.body;
+        
+        const { rows } = await pool.query(
+            'INSERT INTO quotation_sessions (session_name, customer_name, customer_inn, supplier_name, supplier_inn, session_amount, creation_date, completion_date, law_basis, category) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+            [session_name, customer_name, customer_inn, supplier_name, supplier_inn, session_amount, creation_date, completion_date, law_basis, category]
+        );
+        
+        res.json({ success: true, session: rows[0] });
+    } catch (error) {
+        console.error('Create session error:', error);
+        res.status(500).json({ error: 'Failed to create session' });
+    }
+});
+
 app.get('*', (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=UTF-8');
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
     res.status(500).json({ 
@@ -196,13 +198,11 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server with PostgreSQL running on port ${PORT}`);
     console.log(`Access: http://localhost:${PORT}`);
 });
 
-// Graceful shutdown
 process.on('SIGINT', () => {
     console.log('Received SIGINT. Shutting down gracefully...');
     server.close(() => {
