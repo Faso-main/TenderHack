@@ -244,9 +244,7 @@ class KnowledgeBaseApp {
     const profileContent = document.getElementById('profileContent');
     
     profileContent.innerHTML = `
-        <div class="modal-header">
-        </div>
-        <div class="profile-info">
+            <div class="profile-info">
             <div class="profile-item">
                 <i class="fas fa-user"></i>
                 <div>
@@ -282,6 +280,11 @@ class KnowledgeBaseApp {
                     <span>${user.email}</span>
                 </div>
             </div>
+        <div class="modal-header">
+            <h2>Личный кабинет</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+
         </div>
         
         <div class="profile-actions">
