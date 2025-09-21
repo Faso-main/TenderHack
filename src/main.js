@@ -112,7 +112,7 @@ class KnowledgeBaseApp {
             </div>
         `;
     }
-
+    
     checkAuth() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     const userIcon = document.getElementById('userIcon');
@@ -426,7 +426,7 @@ class KnowledgeBaseApp {
         });
     }
 
-    // В методе showResultDetails замените весь HTML модального окна:
+    // В методе showResultDetails замените HTML модального окна:
 showResultDetails(item) {
     const isContract = item.data_type === 'contract';
     const modal = document.createElement('div');
@@ -442,7 +442,6 @@ showResultDetails(item) {
                 <div class="modal-header">
                     <h2>${isContract ? item.contract_name : item.session_name}</h2>
                     <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
-                    <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="detail-grid">
@@ -505,7 +504,6 @@ showResultDetails(item) {
     };
     
     modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
-    modal.querySelector('.modal-close').addEventListener('click', closeModal);
 }
 
     showNotification(message, type = 'info') {

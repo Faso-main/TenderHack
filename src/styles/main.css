@@ -45,13 +45,14 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  padding: 0.5rem 0.5rem;
+  padding: 1rem 1rem;
   display: flex;
   justify-content: flex-end;
   z-index: 1000;
   background: whitesmoke;
   backdrop-filter: blur(10px);
   border-bottom: 2px solid rgba(0, 0, 0, 0.8);
+  margin-bottom: 1rem;
 }
 
 .user-icon {
@@ -459,7 +460,9 @@ body {
 }
 
 .result-modal ::-webkit-scrollbar {
-    width: 3px;
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 .result-modal ::-webkit-scrollbar-track {
@@ -479,15 +482,15 @@ body {
 .result-modal .modal-container {
     width: 90%;
     max-width: 600px;
-    max-height: 85vh; /* Повыше модальное окно */
+    max-height: 90vh; 
     height: auto;
 }
 
 .result-modal .modal-content {
-    max-height: 85vh;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
-    padding: 0;
+    overflow: hidden; /* Убираем внешний скролл */
 }
 
 
@@ -503,12 +506,13 @@ body {
 
 .modal-header h2 {
     color: var(--text-primary);
-    font-size: 1.3rem; /* Меньший шрифт */
+    font-size: 1.3rem;
     font-weight: 600;
     margin: 0;
     flex: 1;
     min-width: 200px;
 }
+
 
 .modal-close {
     background: none;
@@ -532,10 +536,14 @@ body {
 
 .modal-body {
     padding: 2rem;
-    overflow-y: auto;
+    overflow-y: auto; /* Только внутренний скролл */
     flex: 1;
+    scrollbar-width: none; /* Убираем скроллбар для Firefox */
 }
 
+.modal-body::-webkit-scrollbar {
+    display: none; /* Убираем скроллбар для WebKit */
+}
 
 .modal-body p {
   line-height: 1.6;
@@ -586,7 +594,7 @@ body {
 .detail-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.8rem; 
+    gap: 4px;
 }
 
 .detail-item {
@@ -788,6 +796,14 @@ body {
     .data-type-badge {
         font-size: 0.7rem;
         padding: 0.2rem 0.5rem;
+    }
+        .modal-body {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .modal-body::-webkit-scrollbar {
+        display: none;
     }
 }
 
