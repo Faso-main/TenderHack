@@ -6,16 +6,9 @@ class KnowledgeBaseApp {
     }
 
     init() {
-        this.initUsers();
         this.renderApp();
         this.setupEventListeners();
         this.checkAuth();
-    }
-
-    initUsers() {
-        if (!localStorage.getItem('users')) {
-            localStorage.setItem('users', JSON.stringify([]));
-        }
     }
 
     renderApp() {
