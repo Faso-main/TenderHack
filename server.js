@@ -11,17 +11,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = 3001; // Фиксированный порт
 
-// Конфигурация PostgreSQL
+// Конфигурация PostgreSQL - прямые значения
 const pool = new Pool({
-    user: process.env.DB_USER || 'kb_user',
-    host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'knowledge_base',
-    password: process.env.DB_PASSWORD || '1234',
-    port: process.env.DB_PORT || 6432,
+    user: 'kb_user',
+    host: 'localhost',
+    database: 'knowledge_base',
+    password: '1234',
+    port: 5432, // Стандартный порт PostgreSQL
 });
 
+// Middleware
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -41,7 +42,7 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ОБСЛУЖИВАНИЕ СТАТИЧЕСКИХ ФАЙЛОВ - ЭТО ОЧЕНЬ ВАЖНО!
+// Обслуживание статических файлов
 app.use(express.static(__dirname, {
     maxAge: '1y',
     etag: true,
@@ -50,7 +51,6 @@ app.use(express.static(__dirname, {
         if (filePath.endsWith('.html')) {
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         }
-        // Устанавливаем правильные MIME types
         if (filePath.endsWith('.css')) {
             res.setHeader('Content-Type', 'text/css');
         } else if (filePath.endsWith('.js')) {
@@ -59,7 +59,6 @@ app.use(express.static(__dirname, {
     }
 }));
 
-// Явно обслуживаем папку src
 app.use('/src', express.static(path.join(__dirname, 'src')));
 
 // API endpoints
@@ -76,6 +75,11 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/search', async (req, res) => {
     try {
         const { q } = req.query;
+        
+        if (!q || q.trim() === '') {
+            return res.json([]);
+        }
+
         let results = [];
 
         // Поиск по контрактам
@@ -178,7 +182,7 @@ app.use((err, req, res, next) => {
     console.error('Server error:', err);
     res.status(500).json({ 
         error: 'Internal server error',
-        message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
+        message: 'Something went wrong'
     });
 });
 
