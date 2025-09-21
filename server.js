@@ -73,47 +73,57 @@ app.get('/api/health', async (req, res) => {
 
 // Поиск по контрактам и котировочным сессиям
 app.get('/api/search', async (req, res) => {
+    console.log('🔍 Поисковый запрос:', req.query.q);
+    
     try {
         const { q } = req.query;
         
         if (!q || q.trim() === '') {
+            console.log('Пустой поисковый запрос');
             return res.json([]);
+        }
+
+        // Проверим подключение к БД
+        try {
+            await pool.query('SELECT 1');
+            console.log('Подключение к БД активно');
+        } catch (dbError) {
+            console.error('Ошибка подключения к БД:', dbError.message);
+            return res.status(500).json({ error: 'Database connection failed' });
         }
 
         let results = [];
 
         // Поиск по контрактам
-        const contracts = await pool.query(
-            `SELECT *, 'contract' as data_type FROM contracts 
+        console.log('Поиск по контрактам...');
+        const contractsQuery = `
+            SELECT *, 'contract' as data_type FROM contracts 
              WHERE contract_name ILIKE $1 OR customer_name ILIKE $1 OR supplier_name ILIKE $1
                 OR contract_id::text ILIKE $1 OR customer_inn ILIKE $1 OR supplier_inn ILIKE $1
-             ORDER BY contract_date DESC LIMIT 50`,
-            [`%${q}%`]
-        );
+             ORDER BY contract_date DESC LIMIT 50`;
+        
+        const contracts = await pool.query(contractsQuery, [`%${q}%`]);
+        console.log(`Найдено контрактов: ${contracts.rows.length}`);
         results = [...results, ...contracts.rows];
 
         // Поиск по котировочным сессиям
-        const sessions = await pool.query(
-            `SELECT *, 'quotation_session' as data_type FROM quotation_sessions 
+        console.log('Поиск по котировочным сессиям...');
+        const sessionsQuery = `
+            SELECT *, 'quotation_session' as data_type FROM quotation_sessions 
              WHERE session_name ILIKE $1 OR customer_name ILIKE $1 OR supplier_name ILIKE $1
                 OR session_id::text ILIKE $1 OR customer_inn ILIKE $1 OR supplier_inn ILIKE $1
-             ORDER BY creation_date DESC LIMIT 50`,
-            [`%${q}%`]
-        );
+             ORDER BY creation_date DESC LIMIT 50`;
+        
+        const sessions = await pool.query(sessionsQuery, [`%${q}%`]);
+        console.log(`Найдено сессий: ${sessions.rows.length}`);
         results = [...results, ...sessions.rows];
 
-        // Сортируем по дате (новые сначала)
-        results.sort((a, b) => {
-            const dateA = a.data_type === 'contract' ? a.contract_date : a.creation_date;
-            const dateB = b.data_type === 'contract' ? b.contract_date : b.creation_date;
-            return new Date(dateB) - new Date(dateA);
-        });
-
+        console.log(`Всего результатов: ${results.length}`);
         res.json(results.slice(0, 100));
 
     } catch (error) {
-        console.error('Search error:', error);
-        res.status(500).json({ error: 'Search failed' });
+        console.error('Ошибка поиска:', error);
+        res.status(500).json({ error: 'Search failed', details: error.message });
     }
 });
 
