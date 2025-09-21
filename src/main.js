@@ -193,7 +193,8 @@ class KnowledgeBaseApp {
             });
         }
         resultsModal.querySelector('.modal-close').addEventListener('click', () => {
-    this.closeModal(resultsModal);});
+    this.closeModal(resultsModal);
+});
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleRegister();
@@ -244,7 +245,11 @@ class KnowledgeBaseApp {
     const profileContent = document.getElementById('profileContent');
     
     profileContent.innerHTML = `
-            <div class="profile-info">
+        <div class="modal-header">
+            <h2>Личный кабинет</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="profile-info">
             <div class="profile-item">
                 <i class="fas fa-user"></i>
                 <div>
@@ -280,11 +285,6 @@ class KnowledgeBaseApp {
                     <span>${user.email}</span>
                 </div>
             </div>
-        <div class="modal-header">
-            <h2>Личный кабинет</h2>
-            <button class="modal-close">&times;</button>
-        </div>
-
         </div>
         
         <div class="profile-actions">
@@ -626,6 +626,11 @@ showResultDetails(item) {
         <div class="modal-backdrop"></div>
         <div class="modal-container">
             <div class="modal-content">
+                <div class="modal-header">
+                    <h2>${isContract ? item.contract_name : item.session_name}</h2>
+                    <span class="data-type-badge">${isContract ? 'Контракт' : 'Котировочная сессия'}</span>
+                    <button class="modal-close">&times;</button>
+                </div>
                 <div class="modal-body">
                     <div class="detail-grid">
                         <div class="detail-item">

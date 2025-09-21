@@ -1430,3 +1430,138 @@ body {
     background: var(--border);
     border-radius: 2px;
 }
+
+/* Стили для умного поиска */
+.search-suggestions {
+    margin-top: 0.5rem;
+    background: white;
+    border-radius: 0.75rem;
+    border: 2px solid var(--border);
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+}
+
+.suggestion-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: var(--surface);
+    transform: translateX(2px);
+}
+
+.suggestion-item.selected {
+    background: var(--primary-light);
+    color: white;
+}
+
+.suggestion-item.selected i {
+    color: white;
+}
+
+.suggestion-item mark {
+    background: var(--warning);
+    color: var(--text-primary);
+    padding: 0.1rem 0;
+    border-radius: 0.2rem;
+}
+
+.suggestion-category {
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    font-weight: 600;
+    color: var(--primary);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.remove-history {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.2rem;
+    border-radius: 0.2rem;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+}
+
+.remove-history:hover {
+    opacity: 1;
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.suggestion-main {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+}
+
+.suggestion-main i {
+    color: white;
+}
+
+.suggestion-main:hover {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    transform: translateX(0);
+}
+
+/* Анимации для подсказок */
+.search-suggestions {
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Адаптивность для умного поиска */
+@media (max-width: 768px) {
+    .search-suggestions {
+        max-height: 250px;
+        margin-top: 0.5rem;
+    }
+    
+    .suggestion-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .suggestion-category {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .suggestion-item i {
+        font-size: 0.8rem;
+    }
+}

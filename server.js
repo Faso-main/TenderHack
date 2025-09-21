@@ -59,6 +59,49 @@ app.use(express.static(__dirname, {
     }
 }));
 
+app.get('/api/search-suggestions', async (req, res) => {
+    try {
+        const { q } = req.query;
+        
+        if (!q || q.trim() === '') {
+            return res.json({ contracts: [], sessions: [] });
+        }
+
+        const results = {
+            contracts: [],
+            sessions: []
+        };
+
+        // Быстрый поиск контрактов
+        const contracts = await pool.query(`
+            SELECT contract_id, contract_name 
+            FROM contracts 
+            WHERE contract_name ILIKE $1 OR contract_id::text ILIKE $1
+            ORDER BY contract_date DESC 
+            LIMIT 5
+        `, [`%${q}%`]);
+        
+        results.contracts = contracts.rows;
+
+        // Быстрый поиск котировок
+        const sessions = await pool.query(`
+            SELECT session_id, session_name 
+            FROM quotation_sessions 
+            WHERE session_name ILIKE $1 OR session_id::text ILIKE $1
+            ORDER BY creation_date DESC 
+            LIMIT 5
+        `, [`%${q}%`]);
+        
+        results.sessions = sessions.rows;
+
+        res.json(results);
+
+    } catch (error) {
+        console.error('Search suggestions error:', error);
+        res.json({ contracts: [], sessions: [] });
+    }
+});
+
 app.use('/src', express.static(path.join(__dirname, 'src')));
 
 // API endpoints
