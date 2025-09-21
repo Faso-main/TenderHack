@@ -4,7 +4,7 @@ class KnowledgeBaseApp {
     constructor() {
         this.searchSuggestions = [];
         this.searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
-        this.isVectorSearch = true; // Флаг для переключения между типами поиска
+        this.isVectorSearch = true;
         this.init();
     }
 
@@ -360,7 +360,6 @@ class KnowledgeBaseApp {
         }
     }
 
-// Обновите метод getSearchSuggestions
 async getSearchSuggestions() {
     const query = document.getElementById('searchInput').value.trim();
     const suggestionsContainer = document.getElementById('searchSuggestions');
@@ -372,10 +371,8 @@ async getSearchSuggestions() {
     }
     
     try {
-        // Показываем быстрые локальные подсказки
         this.showQuickSuggestions(query);
         
-        // Асинхронно загружаем умные подсказки
         const response = await fetch(`/api/smart-suggestions?q=${encodeURIComponent(query)}&limit=3`);
         
         if (response.ok) {
@@ -515,11 +512,9 @@ displaySmartSuggestions(data, query) {
             });
         }
         
-        // Вставляем умные подсказки после быстрых
         const quickSuggestions = suggestionsContainer.innerHTML;
         suggestionsContainer.innerHTML = quickSuggestions + smartSuggestionsHTML;
         
-        // Добавляем обработчики
         this.setupSuggestionHandlers();
     }
 }
@@ -545,10 +540,8 @@ async showSearchResults() {
             resultsModal.classList.add('active');
         }, 10);
         
-        // Используем векторный поиск
         let results = await this.performVectorSearch(query);
         
-        // Если векторный поиск не дал результатов, используем обычный
         if (results.length === 0) {
             modalQuery.innerHTML = `По запросу: <span>${query}</span> <span class="search-type-badge">текстовый</span>`;
             const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -559,7 +552,6 @@ async showSearchResults() {
         
         this.displayModalResults(results);
         
-        // Сохраняем в историю
         this.addToSearchHistory(query);
         
     } catch (error) {
